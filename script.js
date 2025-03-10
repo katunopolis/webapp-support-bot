@@ -17,13 +17,13 @@ document.getElementById("submit").addEventListener("click", () => {
   };
 
   // Send the support request to your backend
-  fetch("https://supportbot-production-b784.up.railway.app/support-request", {
+fetch("https://supportbot-production-b784.up.railway.app/support-request", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
     },
     body: JSON.stringify(data)
-  })
+})
     .then(response => response.json())
     .then(result => {
       alert(result.message || "Request submitted successfully!");
