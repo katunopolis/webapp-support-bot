@@ -17,7 +17,7 @@ document.getElementById("submit").addEventListener("click", () => {
   };
 
   // Send the support request to your backend
-  fetch("https://supportbot-production-b784.up.railway.app/request", {
+  fetch("https://supportbot-production-b784.up.railway.app/support-request", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
