@@ -1,26 +1,53 @@
 body {
-  font-family: Arial, sans-serif;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
   text-align: center;
-  margin: 20px;
+  margin: 0;
+  padding: 40px 20px;
+  background-color: #f5f7fa;
+  color: #2d3748;
+  line-height: 1.6;
 }
 
 textarea {
   width: 90%;
+  max-width: 800px;
   height: 150px;
   margin-bottom: 20px;
-  padding: 10px;
+  padding: 15px;
   font-size: 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  resize: vertical;
+}
+
+textarea:focus {
+  outline: none;
+  border-color: #4299e1;
+  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.15);
 }
 
 button {
-  padding: 10px 20px;
+  padding: 12px 24px;
   font-size: 16px;
-  background-color: #0088cc;
+  font-weight: 600;
+  background-color: #4299e1;
   color: white;
   border: none;
+  border-radius: 6px;
   cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(66, 153, 225, 0.2);
 }
 
 button:hover {
-  background-color: #007ab8;
+  background-color: #3182ce;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(66, 153, 225, 0.3);
+}
+
+button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(66, 153, 225, 0.2);
 }
