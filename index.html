@@ -48,39 +48,70 @@
             margin-top: 10px;
             display: none;
         }
+
+        .submit-button {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--tg-theme-button-color, #2481cc);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            display: none;
+        }
+
+        .submit-button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Submit a Support Request</h1>
         <textarea id="issue" placeholder="Describe your issue..."></textarea>
+        <button id="submitButton" class="submit-button" onclick="handleSubmit()">Submit Request</button>
         <div id="error" class="error"></div>
     </div>
 
     <script>
         let tg = window.Telegram.WebApp;
         let mainButton = null;
+        let isWebApp = false;
 
         // Initialize the Web App
         function initWebApp() {
             try {
-                // Expand the web app to full screen
-                tg.expand();
+                // Check if we're in Telegram WebApp
+                if (tg && tg.initDataUnsafe) {
+                    isWebApp = true;
+                    console.log('Running in Telegram WebApp');
+                    
+                    // Expand the web app to full screen
+                    tg.expand();
 
-                // Initialize the main button
-                mainButton = tg.MainButton;
-                
-                // Set up the button
-                mainButton.setText('Submit Request');
-                mainButton.onClick(handleSubmit);
-                
-                // Show button only if there's text in the input
-                if (document.getElementById('issue').value.trim()) {
-                    mainButton.show();
+                    // Initialize the main button
+                    mainButton = tg.MainButton;
+                    
+                    // Set up the button
+                    mainButton.setText('Submit Request');
+                    mainButton.onClick(handleSubmit);
+                    
+                    // Show button only if there's text in the input
+                    if (document.getElementById('issue').value.trim()) {
+                        mainButton.show();
+                    }
+                } else {
+                    console.log('Running in web browser');
+                    // Show regular button for web browser
+                    document.getElementById('submitButton').style.display = 'block';
                 }
             } catch (error) {
                 console.error('Error initializing WebApp:', error);
                 showError('Failed to initialize Telegram WebApp');
+                // Fallback to regular button
+                document.getElementById('submitButton').style.display = 'block';
             }
         }
 
@@ -95,8 +126,12 @@
 
             try {
                 // Disable button and show progress
-                mainButton.disable();
-                mainButton.showProgress();
+                if (isWebApp && mainButton) {
+                    mainButton.disable();
+                    mainButton.showProgress();
+                } else {
+                    document.getElementById('submitButton').disabled = true;
+                }
 
                 // Send request
                 const response = await fetch('https://supportbot-production-b784.up.railway.app/support-request', {
@@ -105,7 +140,7 @@
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        user_id: tg.initDataUnsafe.user.id,
+                        user_id: isWebApp ? tg.initDataUnsafe.user.id : null,
                         issue: issue
                     })
                 });
@@ -114,8 +149,12 @@
 
                 if (response.ok) {
                     // Hide progress and disable button before redirect
-                    mainButton.hideProgress();
-                    mainButton.disable();
+                    if (isWebApp && mainButton) {
+                        mainButton.hideProgress();
+                        mainButton.disable();
+                    } else {
+                        document.getElementById('submitButton').disabled = true;
+                    }
                     
                     // Wait a bit before redirecting
                     setTimeout(() => {
@@ -124,26 +163,37 @@
                 } else {
                     showError(data.message || 'Error submitting request');
                     // Reset button state on error
-                    mainButton.hideProgress();
-                    mainButton.enable();
+                    if (isWebApp && mainButton) {
+                        mainButton.hideProgress();
+                        mainButton.enable();
+                    } else {
+                        document.getElementById('submitButton').disabled = false;
+                    }
                 }
             } catch (error) {
                 console.error('Error during submission:', error);
                 showError('Error submitting request. Please try again.');
                 // Reset button state on error
-                mainButton.hideProgress();
-                mainButton.enable();
+                if (isWebApp && mainButton) {
+                    mainButton.hideProgress();
+                    mainButton.enable();
+                } else {
+                    document.getElementById('submitButton').disabled = false;
+                }
             }
         }
 
         // Handle input changes to show/hide button
         document.getElementById('issue').addEventListener('input', () => {
-            if (mainButton) {
-                if (document.getElementById('issue').value.trim()) {
+            const hasText = document.getElementById('issue').value.trim() !== '';
+            if (isWebApp && mainButton) {
+                if (hasText) {
                     mainButton.show();
                 } else {
                     mainButton.hide();
                 }
+            } else {
+                document.getElementById('submitButton').style.display = hasText ? 'block' : 'none';
             }
         });
 
