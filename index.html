@@ -159,24 +159,41 @@
                     mainButton = tg.MainButton;
                     
                     if (!mainButton) {
-                        throw new Error('MainButton not available');
+                        log('MainButton not available, skipping initialization');
+                        return false;
                     }
 
-                    // Initialize button with absolute minimum required setup
+                    // Remove any existing click handlers
+                    try {
+                        mainButton.offClick(handleSubmit);
+                    } catch (e) {
+                        log('No existing click handler to remove');
+                    }
+
+                    // Set up the button with proper checks
                     mainButton.setText('Submit Request');
                     mainButton.onClick(handleSubmit);
-                    mainButton.show();
+                    
+                    // Only show if not already visible
+                    try {
+                        if (!mainButton.isVisible) {
+                            mainButton.show();
+                        }
+                    } catch (e) {
+                        log('Error checking button visibility, showing anyway');
+                        mainButton.show();
+                    }
                     
                     log('MainButton initialized successfully');
+                    return true;
                 } catch (buttonError) {
                     log('Error initializing MainButton', {
                         error: buttonError.message,
                         stack: buttonError.stack
                     });
                     showError('Failed to initialize submit button');
+                    return false;
                 }
-
-                return true;
             } catch (error) {
                 log('Error in initWebApp', {
                     error: error.message,
@@ -220,9 +237,13 @@
             hideError();
 
             try {
-                // Show loading state on button
+                // Show loading state on button with proper check
                 if (mainButton) {
-                    mainButton.showProgress();
+                    try {
+                        mainButton.showProgress();
+                    } catch (e) {
+                        log('Error showing button progress', { error: e.message });
+                    }
                 }
 
                 const response = await fetch('https://supportbot-production-b784.up.railway.app/support-request', {
@@ -241,18 +262,26 @@
 
                 if (response.ok) {
                     log('Request submitted successfully, redirecting to chat');
-                    // Hide progress before redirect
+                    // Hide progress before redirect with proper check
                     if (mainButton) {
-                        mainButton.hideProgress();
+                        try {
+                            mainButton.hideProgress();
+                        } catch (e) {
+                            log('Error hiding button progress', { error: e.message });
+                        }
                     }
                     setTimeout(() => {
                         window.location.href = data.chat_url;
                     }, 1500);
                 } else {
                     showError(data.message || 'Error submitting request');
-                    // Hide progress on error
+                    // Hide progress on error with proper check
                     if (mainButton) {
-                        mainButton.hideProgress();
+                        try {
+                            mainButton.hideProgress();
+                        } catch (e) {
+                            log('Error hiding button progress', { error: e.message });
+                        }
                     }
                 }
             } catch (error) {
@@ -261,9 +290,13 @@
                     stack: error.stack
                 });
                 showError('Error submitting request. Please try again.');
-                // Hide progress on error
+                // Hide progress on error with proper check
                 if (mainButton) {
-                    mainButton.hideProgress();
+                    try {
+                        mainButton.hideProgress();
+                    } catch (e) {
+                        log('Error hiding button progress', { error: e.message });
+                    }
                 }
             }
         }
@@ -286,6 +319,17 @@
         function hideError() {
             errorDiv.style.display = 'none';
         }
+
+        // Clean up button listeners on page unload
+        window.addEventListener('beforeunload', () => {
+            if (mainButton) {
+                try {
+                    mainButton.offClick(handleSubmit);
+                } catch (e) {
+                    log('Error removing button click handler', { error: e.message });
+                }
+            }
+        });
 
         // Initialize when the page loads
         window.addEventListener('load', initWebApp);
