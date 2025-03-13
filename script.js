@@ -1,12 +1,53 @@
 // Access the Telegram Web App API
-const tg = window.Telegram.WebApp;
-tg.expand(); // Expand the web app to full screen if possible
+let tg = window.Telegram.WebApp;
+
+// Initialize Telegram WebApp
+function initTelegramWebApp() {
+    try {
+        if (!tg) {
+            throw new Error('Telegram WebApp not found');
+        }
+        
+        // Expand the web app to full screen if possible
+        tg.expand();
+        
+        // Log initialization status
+        console.log('Telegram WebApp initialized:', {
+            initData: tg.initData,
+            initDataUnsafe: tg.initDataUnsafe,
+            platform: tg.platform,
+            version: tg.version,
+            colorScheme: tg.colorScheme,
+            themeParams: tg.themeParams,
+            isExpanded: tg.isExpanded,
+            viewportHeight: tg.viewportHeight,
+            viewportStableHeight: tg.viewportStableHeight,
+            headerColor: tg.headerColor,
+            backgroundColor: tg.backgroundColor,
+            isClosingConfirmationEnabled: tg.isClosingConfirmationEnabled
+        });
+        
+        return true;
+    } catch (error) {
+        console.error('Error initializing Telegram WebApp:', error);
+        return false;
+    }
+}
 
 // Get DOM elements
 const issueInput = document.getElementById("issue");
 const submitButton = document.getElementById("submit");
 const statusDiv = document.getElementById("status");
 const errorDiv = document.getElementById("error");
+
+// Initialize when the page loads
+window.addEventListener('load', () => {
+    if (!initTelegramWebApp()) {
+        showError('Failed to initialize Telegram WebApp');
+        return;
+    }
+    statusDiv.textContent = "Ready to submit your request";
+});
 
 // Handle form submission
 submitButton.addEventListener("click", async () => {
@@ -18,7 +59,7 @@ submitButton.addEventListener("click", async () => {
     }
 
     // Check if Telegram WebApp is properly initialized
-    if (!tg.initDataUnsafe || !tg.initDataUnsafe.user) {
+    if (!tg || !tg.initDataUnsafe || !tg.initDataUnsafe.user) {
         showError("Error: Telegram WebApp not properly initialized");
         return;
     }
@@ -36,6 +77,8 @@ submitButton.addEventListener("click", async () => {
             issue: issueText
         };
 
+        console.log('Submitting data:', data);
+
         // Send the support request to your backend
         const response = await fetch("https://supportbot-production-b784.up.railway.app/support-request", {
             method: "POST",
@@ -46,6 +89,7 @@ submitButton.addEventListener("click", async () => {
         });
 
         const result = await response.json();
+        console.log('Response:', result);
 
         if (response.ok) {
             // Show success message
@@ -85,9 +129,3 @@ function showError(message) {
 function hideError() {
     errorDiv.style.display = "none";
 }
-
-// Set initial status
-statusDiv.textContent = "Ready to submit your request";
-
-// Log initialization status for debugging
-console.log("Telegram WebApp initialized:", tg.initDataUnsafe);
