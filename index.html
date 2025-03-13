@@ -162,50 +162,30 @@
                         throw new Error('MainButton not available');
                     }
                     
-                    // Log initial button state
+                    // Log initial state before any modifications
                     log('MainButton initial state:', {
                         text: mainButton.text,
                         isVisible: mainButton.isVisible,
-                        isActive: mainButton.isActive,
-                        color: mainButton.color,
-                        textColor: mainButton.textColor,
-                        isEnabled: mainButton.isEnabled,
-                        type: mainButton.type
+                        isActive: mainButton.isActive
                     });
 
-                    // Set up click handler first
+                    // Only use the officially supported methods
                     mainButton.onClick(handleSubmit);
-                    
-                    // Configure button properties
                     mainButton.setText('Submit Request');
-                    mainButton.enable();
                     mainButton.show();
                     
-                    // Verify final button state
+                    // Log final state after setup
                     log('MainButton final state:', {
                         text: mainButton.text,
                         isVisible: mainButton.isVisible,
-                        isActive: mainButton.isActive,
-                        color: mainButton.color,
-                        textColor: mainButton.textColor,
-                        isEnabled: mainButton.isEnabled,
-                        type: mainButton.type
+                        isActive: mainButton.isActive
                     });
                     
                     log('MainButton initialized successfully');
                 } catch (buttonError) {
                     log('Error initializing MainButton', {
                         error: buttonError.message,
-                        stack: buttonError.stack,
-                        buttonState: mainButton ? {
-                            text: mainButton.text,
-                            isVisible: mainButton.isVisible,
-                            isActive: mainButton.isActive,
-                            color: mainButton.color,
-                            textColor: mainButton.textColor,
-                            isEnabled: mainButton.isEnabled,
-                            type: mainButton.type
-                        } : 'null'
+                        stack: buttonError.stack
                     });
                     showError('Failed to initialize submit button');
                 }
