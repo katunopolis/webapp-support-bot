@@ -1,8 +1,6 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Support Request</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
@@ -44,27 +42,11 @@
             border-color: var(--tg-theme-button-color, #2481cc);
         }
 
-        .status {
-            text-align: center;
-            margin-top: 20px;
-            color: var(--tg-theme-hint-color, #999999);
-            font-family: monospace;
-            font-size: 12px;
-            white-space: pre-wrap;
-            word-break: break-all;
-        }
-
         .error {
-            color: #ff4444;
+            color: var(--tg-theme-destructive-text-color, #ff4444);
             text-align: center;
             margin-top: 10px;
             display: none;
-        }
-
-        .log-entry {
-            margin: 5px 0;
-            padding: 5px;
-            border-bottom: 1px solid var(--tg-theme-hint-color, #999999);
         }
     </style>
 </head>
@@ -72,204 +54,50 @@
     <div class="container">
         <h1>Submit a Support Request</h1>
         <textarea id="issue" placeholder="Describe your issue..."></textarea>
-        <div id="status" class="status">Initializing...</div>
         <div id="error" class="error"></div>
     </div>
 
     <script>
-        // Initialize Telegram WebApp
         let tg = window.Telegram.WebApp;
         let mainButton = null;
-
-        // Get DOM elements
-        const issueInput = document.getElementById('issue');
-        const statusDiv = document.getElementById('status');
-        const errorDiv = document.getElementById('error');
-
-        // Function to send logs to backend
-        async function sendLogToBackend(logData) {
-            try {
-                const response = await fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(logData)
-                });
-                const data = await response.json();
-                console.log('Log sent to backend:', data);
-            } catch (error) {
-                console.error('Error sending log to backend:', error);
-            }
-        }
-
-        // Update the log function to send logs to backend
-        function log(message, data = null) {
-            const timestamp = new Date().toISOString();
-            const logData = {
-                timestamp,
-                message,
-                data,
-                url: window.location.href,
-                userAgent: navigator.userAgent
-            };
-            
-            // Send to backend
-            sendLogToBackend(logData);
-            
-            // Update status area
-            const logEntry = document.createElement('div');
-            logEntry.className = 'log-entry';
-            logEntry.textContent = `${timestamp}: ${message}`;
-            statusDiv.insertBefore(logEntry, statusDiv.firstChild);
-            
-            // Keep only last 5 logs
-            while (statusDiv.children.length > 5) {
-                statusDiv.removeChild(statusDiv.lastChild);
-            }
-        }
 
         // Initialize the Web App
         function initWebApp() {
             try {
-                log('Starting WebApp initialization');
-                
-                if (!tg) {
-                    throw new Error('Telegram WebApp not found');
-                }
-
-                // Log all available WebApp properties
-                const webAppProps = {};
-                for (let prop in tg) {
-                    try {
-                        webAppProps[prop] = tg[prop];
-                    } catch (e) {
-                        webAppProps[prop] = 'Error accessing property';
-                    }
-                }
-                log('WebApp properties:', webAppProps);
-
                 // Expand the web app to full screen
                 tg.expand();
-                log('WebApp expanded');
 
                 // Initialize the main button
-                try {
-                    log('Attempting to initialize MainButton');
-                    mainButton = tg.MainButton;
-                    
-                    if (!mainButton) {
-                        log('MainButton not available, skipping initialization');
-                        return false;
-                    }
-
-                    // Log button properties for debugging
-                    try {
-                        const buttonProps = {
-                            type: mainButton.type,
-                            isVisible: mainButton.isVisible,
-                            isActive: mainButton.isActive,
-                            text: mainButton.text
-                        };
-                        log('MainButton properties:', buttonProps);
-                    } catch (e) {
-                        log('Error accessing button properties', { error: e.message });
-                    }
-
-                    // Remove any existing click handlers
-                    try {
-                        mainButton.offClick(handleSubmit);
-                    } catch (e) {
-                        log('No existing click handler to remove');
-                    }
-
-                    // Set up the button with proper checks
-                    try {
-                        // Set text first
-                        mainButton.setText('Submit Request');
-                        
-                        // Set click handler
-                        mainButton.onClick(handleSubmit);
-                        
-                        // Show button only if there's text in the input
-                        if (issueInput.value.trim()) {
-                            mainButton.show();
-                        }
-                        
-                        log('MainButton setup completed successfully');
-                    } catch (e) {
-                        log('Error setting up button', { error: e.message });
-                        throw e;
-                    }
-                    
-                    return true;
-                } catch (buttonError) {
-                    log('Error initializing MainButton', {
-                        error: buttonError.message,
-                        stack: buttonError.stack,
-                        buttonState: {
-                            exists: !!mainButton,
-                            type: mainButton?.type,
-                            isVisible: mainButton?.isVisible,
-                            isActive: mainButton?.isActive
-                        }
-                    });
-                    showError('Failed to initialize submit button');
-                    return false;
+                mainButton = tg.MainButton;
+                
+                // Set up the button
+                mainButton.setText('Submit Request');
+                mainButton.onClick(handleSubmit);
+                
+                // Show button only if there's text in the input
+                if (document.getElementById('issue').value.trim()) {
+                    mainButton.show();
                 }
             } catch (error) {
-                log('Error in initWebApp', {
-                    error: error.message,
-                    stack: error.stack,
-                    tgState: {
-                        exists: !!tg,
-                        initData: !!tg?.initData,
-                        initDataUnsafe: !!tg?.initDataUnsafe,
-                        MainButton: !!tg?.MainButton
-                    }
-                });
-                
+                console.error('Error initializing WebApp:', error);
                 showError('Failed to initialize Telegram WebApp');
-                return false;
             }
         }
 
         // Handle form submission
         async function handleSubmit() {
-            const issue = issueInput.value.trim();
+            const issue = document.getElementById('issue').value.trim();
             
             if (!issue) {
                 showError('Please describe your issue');
                 return;
             }
 
-            if (!tg.initDataUnsafe || !tg.initDataUnsafe.user) {
-                log('WebApp not properly initialized during submit', {
-                    hasInitDataUnsafe: !!tg?.initDataUnsafe,
-                    hasUser: !!tg?.initDataUnsafe?.user
-                });
-                showError('Error: Telegram WebApp not properly initialized');
-                return;
-            }
-
-            // Disable button and show progress
-            if (mainButton) {
-                try {
-                    mainButton.disable();
-                    mainButton.showProgress();
-                } catch (e) {
-                    log('Error setting button state', { error: e.message });
-                }
-            }
-
-            // Show loading state
-            log('Submitting request', {
-                userId: tg.initDataUnsafe.user.id,
-                issueLength: issue.length
-            });
-            hideError();
-
             try {
+                // Disable button and show progress
+                mainButton.disable();
+                mainButton.showProgress();
+
                 // Send request
                 const response = await fetch('https://supportbot-production-b784.up.railway.app/support-request', {
                     method: 'POST',
@@ -283,97 +111,48 @@
                 });
 
                 const data = await response.json();
-                log('Response received', data);
 
                 if (response.ok) {
-                    log('Request submitted successfully, redirecting to chat');
                     // Hide progress and disable button before redirect
-                    if (mainButton) {
-                        try {
-                            mainButton.hideProgress();
-                            mainButton.disable();
-                        } catch (e) {
-                            log('Error resetting button state', { error: e.message });
-                        }
-                    }
-                    // Wait a bit before redirecting to ensure button state is updated
+                    mainButton.hideProgress();
+                    mainButton.disable();
+                    
+                    // Wait a bit before redirecting
                     setTimeout(() => {
                         window.location.href = data.chat_url;
                     }, 1500);
                 } else {
                     showError(data.message || 'Error submitting request');
                     // Reset button state on error
-                    if (mainButton) {
-                        try {
-                            mainButton.hideProgress();
-                            mainButton.enable();
-                        } catch (e) {
-                            log('Error resetting button state', { error: e.message });
-                        }
-                    }
+                    mainButton.hideProgress();
+                    mainButton.enable();
                 }
             } catch (error) {
-                log('Error during submission', {
-                    error: error.message,
-                    stack: error.stack
-                });
+                console.error('Error during submission:', error);
                 showError('Error submitting request. Please try again.');
                 // Reset button state on error
-                if (mainButton) {
-                    try {
-                        mainButton.hideProgress();
-                        mainButton.enable();
-                    } catch (e) {
-                        log('Error resetting button state', { error: e.message });
-                    }
-                }
+                mainButton.hideProgress();
+                mainButton.enable();
             }
         }
 
-        // Handle enter key in textarea
-        issueInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSubmit();
-            }
-        });
-
         // Handle input changes to show/hide button
-        issueInput.addEventListener('input', () => {
+        document.getElementById('issue').addEventListener('input', () => {
             if (mainButton) {
-                try {
-                    if (issueInput.value.trim()) {
-                        mainButton.show();
-                    } else {
-                        mainButton.hide();
-                    }
-                } catch (e) {
-                    log('Error updating button visibility', { error: e.message });
+                if (document.getElementById('issue').value.trim()) {
+                    mainButton.show();
+                } else {
+                    mainButton.hide();
                 }
             }
         });
 
         // Error handling functions
         function showError(message) {
+            const errorDiv = document.getElementById('error');
             errorDiv.textContent = message;
             errorDiv.style.display = 'block';
-            log('Error displayed', { message });
         }
-
-        function hideError() {
-            errorDiv.style.display = 'none';
-        }
-
-        // Clean up button listeners on page unload
-        window.addEventListener('beforeunload', () => {
-            if (mainButton) {
-                try {
-                    mainButton.offClick(handleSubmit);
-                } catch (e) {
-                    log('Error removing button click handler', { error: e.message });
-                }
-            }
-        });
 
         // Initialize when the page loads
         window.addEventListener('load', initWebApp);
