@@ -257,6 +257,16 @@
                 return;
             }
 
+            // Disable button and show progress immediately
+            if (mainButton) {
+                try {
+                    mainButton.disable();
+                    mainButton.showProgress();
+                } catch (e) {
+                    log('Error setting button state', { error: e.message });
+                }
+            }
+
             // Show loading state
             log('Submitting request', {
                 userId: tg.initDataUnsafe.user.id,
@@ -265,15 +275,7 @@
             hideError();
 
             try {
-                // Show loading state on button with proper check
-                if (mainButton) {
-                    try {
-                        mainButton.showProgress();
-                    } catch (e) {
-                        log('Error showing button progress', { error: e.message });
-                    }
-                }
-
+                // Send request without waiting for logging
                 const response = await fetch('https://supportbot-production-b784.up.railway.app/support-request', {
                     method: 'POST',
                     headers: {
@@ -286,16 +288,19 @@
                 });
 
                 const data = await response.json();
+                
+                // Log response after getting data
                 log('Response received', data);
 
                 if (response.ok) {
                     log('Request submitted successfully, redirecting to chat');
-                    // Hide progress before redirect with proper check
+                    // Hide progress before redirect
                     if (mainButton) {
                         try {
                             mainButton.hideProgress();
+                            mainButton.enable();
                         } catch (e) {
-                            log('Error hiding button progress', { error: e.message });
+                            log('Error resetting button state', { error: e.message });
                         }
                     }
                     setTimeout(() => {
@@ -303,12 +308,13 @@
                     }, 1500);
                 } else {
                     showError(data.message || 'Error submitting request');
-                    // Hide progress on error with proper check
+                    // Reset button state on error
                     if (mainButton) {
                         try {
                             mainButton.hideProgress();
+                            mainButton.enable();
                         } catch (e) {
-                            log('Error hiding button progress', { error: e.message });
+                            log('Error resetting button state', { error: e.message });
                         }
                     }
                 }
@@ -318,12 +324,13 @@
                     stack: error.stack
                 });
                 showError('Error submitting request. Please try again.');
-                // Hide progress on error with proper check
+                // Reset button state on error
                 if (mainButton) {
                     try {
                         mainButton.hideProgress();
+                        mainButton.enable();
                     } catch (e) {
-                        log('Error hiding button progress', { error: e.message });
+                        log('Error resetting button state', { error: e.message });
                     }
                 }
             }
