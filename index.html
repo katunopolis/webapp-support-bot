@@ -61,54 +61,10 @@
             display: none;
         }
 
-        /* Fallback button for when Telegram WebApp is not available */
-        .fallback-button {
-            display: none;
-            width: 100%;
-            padding: 15px;
-            background-color: var(--tg-theme-button-color, #2481cc);
-            color: var(--tg-theme-button-text-color, #ffffff);
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 500;
-            cursor: pointer;
-            margin-top: 20px;
-        }
-
-        /* Debug Panel Styles */
-        #debugPanel {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: rgba(0, 0, 0, 0.8);
-            color: #fff;
-            padding: 10px;
-            font-family: monospace;
-            font-size: 12px;
-            max-height: 200px;
-            overflow-y: auto;
-            display: none;
-            z-index: 1000;
-        }
-
-        #debugPanel.visible {
-            display: block;
-        }
-
-        .debug-toggle {
-            position: fixed;
-            bottom: 10px;
-            right: 10px;
-            background: rgba(0, 0, 0, 0.8);
-            color: #fff;
-            border: none;
-            border-radius: 4px;
-            padding: 5px 10px;
-            font-size: 12px;
-            cursor: pointer;
-            z-index: 1001;
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            border-bottom: 1px solid var(--tg-theme-hint-color, #999999);
         }
     </style>
 </head>
@@ -116,54 +72,67 @@
     <div class="container">
         <h1>Submit a Support Request</h1>
         <textarea id="issue" placeholder="Describe your issue..."></textarea>
-        <button id="fallbackSubmit" class="fallback-button">Submit Request</button>
         <div id="status" class="status">Initializing...</div>
         <div id="error" class="error"></div>
     </div>
 
-    <!-- Debug Panel -->
-    <div id="debugPanel"></div>
-    <button class="debug-toggle" onclick="toggleDebug()">Debug</button>
-
     <script>
-        // Debug logging
-        const debugPanel = document.getElementById('debugPanel');
-        let debugLogs = [];
-
-        function logDebug(message, data = null) {
-            const timestamp = new Date().toISOString();
-            const logEntry = `[${timestamp}] ${message}`;
-            debugLogs.push(logEntry);
-            if (data) {
-                debugLogs.push(JSON.stringify(data, null, 2));
-            }
-            updateStatus();
-        }
-
-        function updateStatus() {
-            const lastLogs = debugLogs.slice(-5); // Show last 5 logs
-            statusDiv.textContent = lastLogs.join('\n');
-        }
-
-        function toggleDebug() {
-            debugPanel.classList.toggle('visible');
-        }
-
         // Initialize Telegram WebApp
         let tg = window.Telegram.WebApp;
-        let isInitialized = false;
         let mainButton = null;
 
         // Get DOM elements
         const issueInput = document.getElementById('issue');
         const statusDiv = document.getElementById('status');
         const errorDiv = document.getElementById('error');
-        const fallbackButton = document.getElementById('fallbackSubmit');
+
+        // Function to send logs to backend
+        async function sendLogToBackend(logData) {
+            try {
+                const response = await fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(logData)
+                });
+                const data = await response.json();
+                console.log('Log sent to backend:', data);
+            } catch (error) {
+                console.error('Error sending log to backend:', error);
+            }
+        }
+
+        // Update the log function to send logs to backend
+        function log(message, data = null) {
+            const timestamp = new Date().toISOString();
+            const logData = {
+                timestamp,
+                message,
+                data,
+                url: window.location.href,
+                userAgent: navigator.userAgent
+            };
+            
+            // Send to backend
+            sendLogToBackend(logData);
+            
+            // Update status area
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            logEntry.textContent = `${timestamp}: ${message}`;
+            statusDiv.insertBefore(logEntry, statusDiv.firstChild);
+            
+            // Keep only last 5 logs
+            while (statusDiv.children.length > 5) {
+                statusDiv.removeChild(statusDiv.lastChild);
+            }
+        }
 
         // Initialize the Web App
         function initWebApp() {
             try {
-                logDebug('Starting WebApp initialization');
+                log('Starting WebApp initialization');
                 
                 if (!tg) {
                     throw new Error('Telegram WebApp not found');
@@ -178,15 +147,15 @@
                         webAppProps[prop] = 'Error accessing property';
                     }
                 }
-                logDebug('WebApp properties:', webAppProps);
+                log('WebApp properties:', webAppProps);
 
                 // Expand the web app to full screen
                 tg.expand();
-                logDebug('WebApp expanded');
+                log('WebApp expanded');
 
                 // Initialize the main button
                 try {
-                    logDebug('Attempting to initialize MainButton');
+                    log('Attempting to initialize MainButton');
                     mainButton = tg.MainButton;
                     
                     if (!mainButton) {
@@ -202,7 +171,7 @@
                             buttonProps[prop] = 'Error accessing property';
                         }
                     }
-                    logDebug('MainButton properties:', buttonProps);
+                    log('MainButton properties:', buttonProps);
                     
                     // Configure the button
                     mainButton.setText('Submit Request');
@@ -212,9 +181,9 @@
                     // Set up click handler
                     mainButton.onClick(handleSubmit);
                     
-                    logDebug('MainButton initialized successfully');
+                    log('MainButton initialized successfully');
                 } catch (buttonError) {
-                    logDebug('Error initializing MainButton', {
+                    log('Error initializing MainButton', {
                         error: buttonError.message,
                         stack: buttonError.stack,
                         buttonState: mainButton ? {
@@ -223,16 +192,12 @@
                             isActive: mainButton.isActive
                         } : 'null'
                     });
-                    
-                    // Show fallback button
-                    fallbackButton.style.display = 'block';
-                    fallbackButton.addEventListener('click', handleSubmit);
+                    showError('Failed to initialize submit button');
                 }
 
-                isInitialized = true;
                 return true;
             } catch (error) {
-                logDebug('Error in initWebApp', {
+                log('Error in initWebApp', {
                     error: error.message,
                     stack: error.stack,
                     tgState: {
@@ -244,9 +209,6 @@
                 });
                 
                 showError('Failed to initialize Telegram WebApp');
-                // Show fallback button
-                fallbackButton.style.display = 'block';
-                fallbackButton.addEventListener('click', handleSubmit);
                 return false;
             }
         }
@@ -260,9 +222,8 @@
                 return;
             }
 
-            if (!isInitialized || !tg.initDataUnsafe || !tg.initDataUnsafe.user) {
-                logDebug('WebApp not properly initialized during submit', {
-                    isInitialized,
+            if (!tg.initDataUnsafe || !tg.initDataUnsafe.user) {
+                log('WebApp not properly initialized during submit', {
                     hasInitDataUnsafe: !!tg?.initDataUnsafe,
                     hasUser: !!tg?.initDataUnsafe?.user,
                     userData: tg?.initDataUnsafe?.user
@@ -272,15 +233,13 @@
             }
 
             // Show loading state
-            statusDiv.textContent = 'Submitting your request...';
+            log('Submitting request', {
+                userId: tg.initDataUnsafe.user.id,
+                issueLength: issue.length
+            });
             hideError();
 
             try {
-                logDebug('Submitting request', {
-                    userId: tg.initDataUnsafe.user.id,
-                    issueLength: issue.length
-                });
-
                 const response = await fetch('https://supportbot-production-b784.up.railway.app/support-request', {
                     method: 'POST',
                     headers: {
@@ -293,10 +252,10 @@
                 });
 
                 const data = await response.json();
-                logDebug('Response received', data);
+                log('Response received', data);
 
                 if (response.ok) {
-                    statusDiv.textContent = 'Request submitted successfully! Redirecting to chat...';
+                    log('Request submitted successfully, redirecting to chat');
                     setTimeout(() => {
                         window.location.href = data.chat_url;
                     }, 1500);
@@ -304,11 +263,10 @@
                     showError(data.message || 'Error submitting request');
                 }
             } catch (error) {
-                logDebug('Error during submission', {
+                log('Error during submission', {
                     error: error.message,
                     stack: error.stack
                 });
-                console.error('Error:', error);
                 showError('Error submitting request. Please try again.');
             }
         }
@@ -325,7 +283,7 @@
         function showError(message) {
             errorDiv.textContent = message;
             errorDiv.style.display = 'block';
-            logDebug('Error displayed', { message });
+            log('Error displayed', { message });
         }
 
         function hideError() {
