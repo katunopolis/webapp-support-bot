@@ -162,7 +162,7 @@
                         throw new Error('MainButton not available');
                     }
                     
-                    // Log MainButton properties
+                    // Log MainButton properties before modification
                     const buttonProps = {};
                     for (let prop in mainButton) {
                         try {
@@ -171,29 +171,35 @@
                             buttonProps[prop] = 'Error accessing property';
                         }
                     }
-                    log('MainButton properties:', buttonProps);
+                    log('MainButton initial properties:', buttonProps);
                     
-                    // Configure the button
-                    log('Setting MainButton text');
+                    // Configure the button with all properties at once
                     mainButton.setText('Submit Request');
+                    mainButton.setParams({
+                        type: 'default',
+                        text: 'Submit Request',
+                        color: '#5288c1',
+                        textColor: '#ffffff',
+                        isVisible: true,
+                        isActive: true
+                    });
                     
-                    log('Enabling MainButton');
+                    // Enable and show the button
                     mainButton.enable();
-                    
-                    log('Showing MainButton');
                     mainButton.show();
                     
-                    log('Setting MainButton click handler');
+                    // Set up click handler
                     mainButton.onClick(handleSubmit);
                     
-                    // Verify button state
-                    log('MainButton state after initialization:', {
+                    // Verify final button state
+                    log('MainButton final state:', {
                         text: mainButton.text,
                         isVisible: mainButton.isVisible,
                         isActive: mainButton.isActive,
                         color: mainButton.color,
                         textColor: mainButton.textColor,
-                        isEnabled: mainButton.isEnabled
+                        isEnabled: mainButton.isEnabled,
+                        type: mainButton.type
                     });
                     
                     log('MainButton initialized successfully');
@@ -207,7 +213,8 @@
                             isActive: mainButton.isActive,
                             color: mainButton.color,
                             textColor: mainButton.textColor,
-                            isEnabled: mainButton.isEnabled
+                            isEnabled: mainButton.isEnabled,
+                            type: mainButton.type
                         } : 'null'
                     });
                     showError('Failed to initialize submit button');
@@ -258,6 +265,12 @@
             hideError();
 
             try {
+                // Disable the button while submitting
+                if (mainButton) {
+                    mainButton.disable();
+                    mainButton.showProgress();
+                }
+
                 const response = await fetch('https://supportbot-production-b784.up.railway.app/support-request', {
                     method: 'POST',
                     headers: {
@@ -274,11 +287,21 @@
 
                 if (response.ok) {
                     log('Request submitted successfully, redirecting to chat');
+                    // Re-enable the button before redirect
+                    if (mainButton) {
+                        mainButton.enable();
+                        mainButton.hideProgress();
+                    }
                     setTimeout(() => {
                         window.location.href = data.chat_url;
                     }, 1500);
                 } else {
                     showError(data.message || 'Error submitting request');
+                    // Re-enable the button on error
+                    if (mainButton) {
+                        mainButton.enable();
+                        mainButton.hideProgress();
+                    }
                 }
             } catch (error) {
                 log('Error during submission', {
@@ -286,6 +309,11 @@
                     stack: error.stack
                 });
                 showError('Error submitting request. Please try again.');
+                // Re-enable the button on error
+                if (mainButton) {
+                    mainButton.enable();
+                    mainButton.hideProgress();
+                }
             }
         }
 
