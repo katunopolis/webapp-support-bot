@@ -162,23 +162,20 @@
                         throw new Error('MainButton not available');
                     }
                     
-                    // Log initial state before any modifications
+                    // Log initial state
                     log('MainButton initial state:', {
                         text: mainButton.text,
-                        isVisible: mainButton.isVisible,
-                        isActive: mainButton.isActive
+                        isVisible: mainButton.isVisible
                     });
 
-                    // Only use the officially supported methods
+                    // Set only the click handler and text
                     mainButton.onClick(handleSubmit);
                     mainButton.setText('Submit Request');
-                    mainButton.show();
                     
-                    // Log final state after setup
+                    // Log final state
                     log('MainButton final state:', {
                         text: mainButton.text,
-                        isVisible: mainButton.isVisible,
-                        isActive: mainButton.isActive
+                        isVisible: mainButton.isVisible
                     });
                     
                     log('MainButton initialized successfully');
