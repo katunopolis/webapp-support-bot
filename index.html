@@ -163,6 +163,19 @@
                         return false;
                     }
 
+                    // Log button properties for debugging
+                    try {
+                        const buttonProps = {
+                            type: mainButton.type,
+                            isVisible: mainButton.isVisible,
+                            isActive: mainButton.isActive,
+                            text: mainButton.text
+                        };
+                        log('MainButton properties:', buttonProps);
+                    } catch (e) {
+                        log('Error accessing button properties', { error: e.message });
+                    }
+
                     // Remove any existing click handlers
                     try {
                         mainButton.offClick(handleSubmit);
@@ -170,26 +183,41 @@
                         log('No existing click handler to remove');
                     }
 
-                    // Set up the button with proper checks
-                    mainButton.setText('Submit Request');
-                    mainButton.onClick(handleSubmit);
-                    
-                    // Only show if not already visible
+                    // Reset button state
                     try {
-                        if (!mainButton.isVisible) {
-                            mainButton.show();
-                        }
+                        mainButton.hide();
                     } catch (e) {
-                        log('Error checking button visibility, showing anyway');
+                        log('Error hiding button', { error: e.message });
+                    }
+
+                    // Set up the button with proper checks
+                    try {
+                        // Set text first
+                        mainButton.setText('Submit Request');
+                        
+                        // Set click handler
+                        mainButton.onClick(handleSubmit);
+                        
+                        // Show button
                         mainButton.show();
+                        
+                        log('MainButton setup completed successfully');
+                    } catch (e) {
+                        log('Error setting up button', { error: e.message });
+                        throw e;
                     }
                     
-                    log('MainButton initialized successfully');
                     return true;
                 } catch (buttonError) {
                     log('Error initializing MainButton', {
                         error: buttonError.message,
-                        stack: buttonError.stack
+                        stack: buttonError.stack,
+                        buttonState: {
+                            exists: !!mainButton,
+                            type: mainButton?.type,
+                            isVisible: mainButton?.isVisible,
+                            isActive: mainButton?.isActive
+                        }
                     });
                     showError('Failed to initialize submit button');
                     return false;
