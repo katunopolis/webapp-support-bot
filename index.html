@@ -183,13 +183,6 @@
                         log('No existing click handler to remove');
                     }
 
-                    // Reset button state
-                    try {
-                        mainButton.hide();
-                    } catch (e) {
-                        log('Error hiding button', { error: e.message });
-                    }
-
                     // Set up the button with proper checks
                     try {
                         // Set text first
@@ -198,8 +191,10 @@
                         // Set click handler
                         mainButton.onClick(handleSubmit);
                         
-                        // Show button
-                        mainButton.show();
+                        // Show button only if there's text in the input
+                        if (issueInput.value.trim()) {
+                            mainButton.show();
+                        }
                         
                         log('MainButton setup completed successfully');
                     } catch (e) {
@@ -257,7 +252,7 @@
                 return;
             }
 
-            // Disable button and show progress immediately
+            // Disable button and show progress
             if (mainButton) {
                 try {
                     mainButton.disable();
@@ -275,7 +270,7 @@
             hideError();
 
             try {
-                // Send request without waiting for logging
+                // Send request
                 const response = await fetch('https://supportbot-production-b784.up.railway.app/support-request', {
                     method: 'POST',
                     headers: {
@@ -288,21 +283,20 @@
                 });
 
                 const data = await response.json();
-                
-                // Log response after getting data
                 log('Response received', data);
 
                 if (response.ok) {
                     log('Request submitted successfully, redirecting to chat');
-                    // Hide progress before redirect
+                    // Hide progress and disable button before redirect
                     if (mainButton) {
                         try {
                             mainButton.hideProgress();
-                            mainButton.enable();
+                            mainButton.disable();
                         } catch (e) {
                             log('Error resetting button state', { error: e.message });
                         }
                     }
+                    // Wait a bit before redirecting to ensure button state is updated
                     setTimeout(() => {
                         window.location.href = data.chat_url;
                     }, 1500);
@@ -341,6 +335,21 @@
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 handleSubmit();
+            }
+        });
+
+        // Handle input changes to show/hide button
+        issueInput.addEventListener('input', () => {
+            if (mainButton) {
+                try {
+                    if (issueInput.value.trim()) {
+                        mainButton.show();
+                    } else {
+                        mainButton.hide();
+                    }
+                } catch (e) {
+                    log('Error updating button visibility', { error: e.message });
+                }
             }
         });
 
