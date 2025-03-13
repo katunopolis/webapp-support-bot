@@ -162,96 +162,28 @@
                         throw new Error('MainButton not available');
                     }
                     
-                    // Log all available MainButton properties
-                    const buttonProps = {};
-                    try {
-                        buttonProps.text = mainButton.text;
-                        buttonProps.isVisible = mainButton.isVisible;
-                        buttonProps.isActive = mainButton.isActive;
-                        buttonProps.type = mainButton.type;
-                        buttonProps.color = mainButton.color;
-                        buttonProps.textColor = mainButton.textColor;
-                        buttonProps.isEnabled = mainButton.isEnabled;
-                        buttonProps.isProgressVisible = mainButton.isProgressVisible;
-                        buttonProps.hasShineEffect = mainButton.hasShineEffect;
-                    } catch (e) {
-                        buttonProps.error = e.message;
-                    }
-                    log('MainButton all properties:', buttonProps);
-
-                    // Log available methods
-                    const buttonMethods = {
-                        onClick: typeof mainButton.onClick === 'function',
-                        setText: typeof mainButton.setText === 'function',
-                        show: typeof mainButton.show === 'function',
-                        hide: typeof mainButton.hide === 'function',
-                        enable: typeof mainButton.enable === 'function',
-                        disable: typeof mainButton.disable === 'function',
-                        showProgress: typeof mainButton.showProgress === 'function',
-                        hideProgress: typeof mainButton.hideProgress === 'function',
-                        setParams: typeof mainButton.setParams === 'function'
-                    };
-                    log('MainButton available methods:', buttonMethods);
-
-                    // First, ensure the button is hidden and disabled
-                    log('Attempting to hide and disable button');
-                    mainButton.hide();
-                    mainButton.disable();
-                    log('Button state after hide/disable:', {
-                        isVisible: mainButton.isVisible,
-                        isEnabled: mainButton.isEnabled
+                    // Log initial state
+                    log('MainButton initial state:', {
+                        text: mainButton.text,
+                        isVisible: mainButton.isVisible
                     });
-                    
-                    // Then set up the button in the correct order
-                    log('Setting up button handlers and text');
+
+                    // Set up the button following Telegram's documentation
                     mainButton.onClick(handleSubmit);
                     mainButton.setText('Submit Request');
-                    log('Button state after setup:', {
-                        text: mainButton.text,
-                        isEnabled: mainButton.isEnabled
-                    });
-
-                    mainButton.enable();
                     mainButton.show();
-                    log('Button state after enable/show:', {
-                        isVisible: mainButton.isVisible,
-                        isEnabled: mainButton.isEnabled,
-                        text: mainButton.text
-                    });
                     
-                    // Final state check
-                    const finalState = {};
-                    try {
-                        finalState.text = mainButton.text;
-                        finalState.isVisible = mainButton.isVisible;
-                        finalState.isActive = mainButton.isActive;
-                        finalState.type = mainButton.type;
-                        finalState.color = mainButton.color;
-                        finalState.textColor = mainButton.textColor;
-                        finalState.isEnabled = mainButton.isEnabled;
-                        finalState.isProgressVisible = mainButton.isProgressVisible;
-                        finalState.hasShineEffect = mainButton.hasShineEffect;
-                    } catch (e) {
-                        finalState.error = e.message;
-                    }
-                    log('MainButton final state:', finalState);
+                    // Log final state
+                    log('MainButton final state:', {
+                        text: mainButton.text,
+                        isVisible: mainButton.isVisible
+                    });
                     
                     log('MainButton initialized successfully');
                 } catch (buttonError) {
                     log('Error initializing MainButton', {
                         error: buttonError.message,
-                        stack: buttonError.stack,
-                        buttonState: mainButton ? {
-                            text: mainButton.text,
-                            isVisible: mainButton.isVisible,
-                            isActive: mainButton.isActive,
-                            type: mainButton.type,
-                            color: mainButton.color,
-                            textColor: mainButton.textColor,
-                            isEnabled: mainButton.isEnabled,
-                            isProgressVisible: mainButton.isProgressVisible,
-                            hasShineEffect: mainButton.hasShineEffect
-                        } : 'null'
+                        stack: buttonError.stack
                     });
                     showError('Failed to initialize submit button');
                 }
@@ -286,8 +218,7 @@
             if (!tg.initDataUnsafe || !tg.initDataUnsafe.user) {
                 log('WebApp not properly initialized during submit', {
                     hasInitDataUnsafe: !!tg?.initDataUnsafe,
-                    hasUser: !!tg?.initDataUnsafe?.user,
-                    userData: tg?.initDataUnsafe?.user
+                    hasUser: !!tg?.initDataUnsafe?.user
                 });
                 showError('Error: Telegram WebApp not properly initialized');
                 return;
@@ -301,9 +232,8 @@
             hideError();
 
             try {
-                // Disable the button while submitting
+                // Show loading state on button
                 if (mainButton) {
-                    mainButton.disable();
                     mainButton.showProgress();
                 }
 
@@ -323,9 +253,8 @@
 
                 if (response.ok) {
                     log('Request submitted successfully, redirecting to chat');
-                    // Re-enable the button before redirect
+                    // Hide progress before redirect
                     if (mainButton) {
-                        mainButton.enable();
                         mainButton.hideProgress();
                     }
                     setTimeout(() => {
@@ -333,9 +262,8 @@
                     }, 1500);
                 } else {
                     showError(data.message || 'Error submitting request');
-                    // Re-enable the button on error
+                    // Hide progress on error
                     if (mainButton) {
-                        mainButton.enable();
                         mainButton.hideProgress();
                     }
                 }
@@ -345,9 +273,8 @@
                     stack: error.stack
                 });
                 showError('Error submitting request. Please try again.');
-                // Re-enable the button on error
+                // Hide progress on error
                 if (mainButton) {
-                    mainButton.enable();
                     mainButton.hideProgress();
                 }
             }
