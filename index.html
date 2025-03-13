@@ -3,6 +3,10 @@
 <head>
     <title>Support Request</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#2481cc">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
@@ -10,18 +14,23 @@
             padding: 20px;
             background-color: var(--tg-theme-bg-color, #ffffff);
             color: var(--tg-theme-text-color, #000000);
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
 
         .container {
             max-width: 600px;
             margin: 0 auto;
             padding: 20px;
+            padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
         }
 
         h1 {
             text-align: center;
             margin-bottom: 30px;
             color: var(--tg-theme-text-color, #000000);
+            font-size: 1.5rem;
+            margin-top: env(safe-area-inset-top, 0px);
         }
 
         textarea {
@@ -35,6 +44,9 @@
             font-size: 16px;
             background-color: var(--tg-theme-bg-color, #ffffff);
             color: var(--tg-theme-text-color, #000000);
+            box-sizing: border-box;
+            -webkit-appearance: none;
+            appearance: none;
         }
 
         textarea:focus {
@@ -47,6 +59,7 @@
             text-align: center;
             margin-top: 10px;
             display: none;
+            font-size: 0.9rem;
         }
 
         .submit-button {
@@ -59,11 +72,37 @@
             font-size: 16px;
             cursor: pointer;
             display: none;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            position: relative;
+            overflow: hidden;
         }
 
         .submit-button:disabled {
             opacity: 0.7;
             cursor: not-allowed;
+        }
+
+        .submit-button:active {
+            transform: scale(0.98);
+        }
+
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #ffffff;
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+
+        @keyframes spin {
+            to { transform: translate(-50%, -50%) rotate(360deg); }
         }
     </style>
 </head>
@@ -79,23 +118,45 @@
         let tg = window.Telegram.WebApp;
         let mainButton = null;
         let isWebApp = false;
+        let platform = 'unknown';
+
+        // Detect platform and initialize
+        function detectPlatform() {
+            if (tg && tg.initDataUnsafe) {
+                isWebApp = true;
+                platform = tg.platform || 'unknown';
+                console.log('Running in Telegram WebApp on platform:', platform);
+                
+                // Platform-specific adjustments
+                if (platform === 'ios' || platform === 'android') {
+                    // Mobile-specific adjustments
+                    document.body.style.paddingBottom = 'env(safe-area-inset-bottom, 20px)';
+                } else if (platform === 'tdesktop' || platform === 'macos') {
+                    // Desktop-specific adjustments
+                    document.body.style.maxWidth = '800px';
+                    document.body.style.margin = '0 auto';
+                }
+            } else {
+                console.log('Running in web browser');
+                platform = 'web';
+            }
+        }
 
         // Initialize the Web App
         function initWebApp() {
             try {
-                // Check if we're in Telegram WebApp
-                if (tg && tg.initDataUnsafe) {
-                    isWebApp = true;
-                    console.log('Running in Telegram WebApp');
-                    
+                detectPlatform();
+                
+                if (isWebApp) {
                     // Expand the web app to full screen
                     tg.expand();
 
                     // Initialize the main button
                     mainButton = tg.MainButton;
                     
-                    // Set up the button
-                    mainButton.setText('Submit Request');
+                    // Set up the button with platform-specific text
+                    const buttonText = platform === 'ios' ? 'Send' : 'Submit Request';
+                    mainButton.setText(buttonText);
                     mainButton.onClick(handleSubmit);
                     
                     // Show button only if there's text in the input
@@ -103,7 +164,6 @@
                         mainButton.show();
                     }
                 } else {
-                    console.log('Running in web browser');
                     // Show regular button for web browser
                     document.getElementById('submitButton').style.display = 'block';
                 }
@@ -130,7 +190,9 @@
                     mainButton.disable();
                     mainButton.showProgress();
                 } else {
-                    document.getElementById('submitButton').disabled = true;
+                    const submitButton = document.getElementById('submitButton');
+                    submitButton.disabled = true;
+                    submitButton.querySelector('.loading').style.display = 'block';
                 }
 
                 // Send request
@@ -141,7 +203,8 @@
                     },
                     body: JSON.stringify({
                         user_id: isWebApp ? tg.initDataUnsafe.user.id : null,
-                        issue: issue
+                        issue: issue,
+                        platform: platform
                     })
                 });
 
@@ -153,13 +216,21 @@
                         mainButton.hideProgress();
                         mainButton.disable();
                     } else {
-                        document.getElementById('submitButton').disabled = true;
+                        const submitButton = document.getElementById('submitButton');
+                        submitButton.disabled = true;
+                        submitButton.querySelector('.loading').style.display = 'none';
                     }
                     
-                    // Wait a bit before redirecting
-                    setTimeout(() => {
+                    // Platform-specific redirect handling
+                    if (platform === 'ios' || platform === 'android') {
+                        // Mobile platforms might need a slight delay
+                        setTimeout(() => {
+                            window.location.href = data.chat_url;
+                        }, 1500);
+                    } else {
+                        // Desktop and web can redirect immediately
                         window.location.href = data.chat_url;
-                    }, 1500);
+                    }
                 } else {
                     showError(data.message || 'Error submitting request');
                     // Reset button state on error
@@ -167,7 +238,9 @@
                         mainButton.hideProgress();
                         mainButton.enable();
                     } else {
-                        document.getElementById('submitButton').disabled = false;
+                        const submitButton = document.getElementById('submitButton');
+                        submitButton.disabled = false;
+                        submitButton.querySelector('.loading').style.display = 'none';
                     }
                 }
             } catch (error) {
@@ -178,7 +251,9 @@
                     mainButton.hideProgress();
                     mainButton.enable();
                 } else {
-                    document.getElementById('submitButton').disabled = false;
+                    const submitButton = document.getElementById('submitButton');
+                    submitButton.disabled = false;
+                    submitButton.querySelector('.loading').style.display = 'none';
                 }
             }
         }
@@ -202,10 +277,30 @@
             const errorDiv = document.getElementById('error');
             errorDiv.textContent = message;
             errorDiv.style.display = 'block';
+            
+            // Auto-hide error after 5 seconds
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
         }
 
         // Initialize when the page loads
         window.addEventListener('load', initWebApp);
+
+        // Handle platform-specific events
+        if (isWebApp) {
+            // Handle viewport changes
+            tg.onEvent('viewportChanged', () => {
+                // Update layout if needed
+                console.log('Viewport changed');
+            });
+
+            // Handle theme changes
+            tg.onEvent('themeChanged', () => {
+                // Update theme if needed
+                console.log('Theme changed');
+            });
+        }
     </script>
 </body>
 </html>
