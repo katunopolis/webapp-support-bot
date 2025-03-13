@@ -48,6 +48,10 @@
             text-align: center;
             margin-top: 20px;
             color: var(--tg-theme-hint-color, #999999);
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-break: break-all;
         }
 
         .error {
@@ -133,12 +137,12 @@
             if (data) {
                 debugLogs.push(JSON.stringify(data, null, 2));
             }
-            updateDebugPanel();
+            updateStatus();
         }
 
-        function updateDebugPanel() {
-            debugPanel.innerHTML = debugLogs.join('<br>');
-            debugPanel.scrollTop = debugPanel.scrollHeight;
+        function updateStatus() {
+            const lastLogs = debugLogs.slice(-5); // Show last 5 logs
+            statusDiv.textContent = lastLogs.join('\n');
         }
 
         function toggleDebug() {
@@ -165,20 +169,16 @@
                     throw new Error('Telegram WebApp not found');
                 }
 
-                logDebug('Telegram WebApp object found', {
-                    initData: tg.initData,
-                    initDataUnsafe: tg.initDataUnsafe,
-                    platform: tg.platform,
-                    version: tg.version,
-                    colorScheme: tg.colorScheme,
-                    themeParams: tg.themeParams,
-                    isExpanded: tg.isExpanded,
-                    viewportHeight: tg.viewportHeight,
-                    viewportStableHeight: tg.viewportStableHeight,
-                    headerColor: tg.headerColor,
-                    backgroundColor: tg.backgroundColor,
-                    isClosingConfirmationEnabled: tg.isClosingConfirmationEnabled
-                });
+                // Log all available WebApp properties
+                const webAppProps = {};
+                for (let prop in tg) {
+                    try {
+                        webAppProps[prop] = tg[prop];
+                    } catch (e) {
+                        webAppProps[prop] = 'Error accessing property';
+                    }
+                }
+                logDebug('WebApp properties:', webAppProps);
 
                 // Expand the web app to full screen
                 tg.expand();
@@ -193,12 +193,16 @@
                         throw new Error('MainButton not available');
                     }
                     
-                    logDebug('MainButton object found', {
-                        text: mainButton.text,
-                        isVisible: mainButton.isVisible,
-                        isActive: mainButton.isActive,
-                        isProgressVisible: mainButton.isProgressVisible
-                    });
+                    // Log MainButton properties
+                    const buttonProps = {};
+                    for (let prop in mainButton) {
+                        try {
+                            buttonProps[prop] = mainButton[prop];
+                        } catch (e) {
+                            buttonProps[prop] = 'Error accessing property';
+                        }
+                    }
+                    logDebug('MainButton properties:', buttonProps);
                     
                     // Configure the button
                     mainButton.setText('Submit Request');
@@ -226,7 +230,6 @@
                 }
 
                 isInitialized = true;
-                statusDiv.textContent = 'Ready to submit your request';
                 return true;
             } catch (error) {
                 logDebug('Error in initWebApp', {
