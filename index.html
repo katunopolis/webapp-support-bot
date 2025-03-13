@@ -162,34 +162,24 @@
                         throw new Error('MainButton not available');
                     }
                     
-                    // Log MainButton properties before modification
-                    const buttonProps = {};
-                    for (let prop in mainButton) {
-                        try {
-                            buttonProps[prop] = mainButton[prop];
-                        } catch (e) {
-                            buttonProps[prop] = 'Error accessing property';
-                        }
-                    }
-                    log('MainButton initial properties:', buttonProps);
-                    
-                    // Configure the button with all properties at once
-                    mainButton.setText('Submit Request');
-                    mainButton.setParams({
-                        type: 'default',
-                        text: 'Submit Request',
-                        color: '#5288c1',
-                        textColor: '#ffffff',
-                        isVisible: true,
-                        isActive: true
+                    // Log initial button state
+                    log('MainButton initial state:', {
+                        text: mainButton.text,
+                        isVisible: mainButton.isVisible,
+                        isActive: mainButton.isActive,
+                        color: mainButton.color,
+                        textColor: mainButton.textColor,
+                        isEnabled: mainButton.isEnabled,
+                        type: mainButton.type
                     });
+
+                    // Set up click handler first
+                    mainButton.onClick(handleSubmit);
                     
-                    // Enable and show the button
+                    // Configure button properties
+                    mainButton.setText('Submit Request');
                     mainButton.enable();
                     mainButton.show();
-                    
-                    // Set up click handler
-                    mainButton.onClick(handleSubmit);
                     
                     // Verify final button state
                     log('MainButton final state:', {
