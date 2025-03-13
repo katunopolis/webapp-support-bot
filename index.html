@@ -168,9 +168,10 @@
                         isVisible: mainButton.isVisible
                     });
 
-                    // Set only the click handler and text
+                    // Set only the click handler, text, and show the button
                     mainButton.onClick(handleSubmit);
                     mainButton.setText('Submit Request');
+                    mainButton.show();  // Show the button
                     
                     // Log final state
                     log('MainButton final state:', {
