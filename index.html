@@ -161,23 +161,11 @@
                     if (!mainButton) {
                         throw new Error('MainButton not available');
                     }
-                    
-                    // Log initial state
-                    log('MainButton initial state:', {
-                        text: mainButton.text,
-                        isVisible: mainButton.isVisible
-                    });
 
-                    // Set up the button following Telegram's documentation
-                    mainButton.onClick(handleSubmit);
+                    // Set up the button with only the required methods
                     mainButton.setText('Submit Request');
+                    mainButton.onClick(handleSubmit);
                     mainButton.show();
-                    
-                    // Log final state
-                    log('MainButton final state:', {
-                        text: mainButton.text,
-                        isVisible: mainButton.isVisible
-                    });
                     
                     log('MainButton initialized successfully');
                 } catch (buttonError) {
