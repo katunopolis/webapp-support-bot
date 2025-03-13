@@ -56,12 +56,28 @@
             margin-top: 10px;
             display: none;
         }
+
+        /* Fallback button for when Telegram WebApp is not available */
+        .fallback-button {
+            display: none;
+            width: 100%;
+            padding: 15px;
+            background-color: var(--tg-theme-button-color, #2481cc);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Submit a Support Request</h1>
         <textarea id="issue" placeholder="Describe your issue..."></textarea>
+        <button id="fallbackSubmit" class="fallback-button">Submit Request</button>
         <div id="status" class="status">Initializing...</div>
         <div id="error" class="error"></div>
     </div>
@@ -70,11 +86,13 @@
         // Initialize Telegram WebApp
         let tg = window.Telegram.WebApp;
         let isInitialized = false;
+        let mainButton = null;
 
         // Get DOM elements
         const issueInput = document.getElementById('issue');
         const statusDiv = document.getElementById('status');
         const errorDiv = document.getElementById('error');
+        const fallbackButton = document.getElementById('fallbackSubmit');
 
         // Initialize the Web App
         function initWebApp() {
@@ -94,11 +112,28 @@
                     version: tg.version
                 });
 
-                // Create and show the submit button
-                const button = tg.MainButton;
-                button.setText('Submit Request');
-                button.show();
-                button.onClick(handleSubmit);
+                // Initialize the main button
+                try {
+                    mainButton = tg.MainButton;
+                    if (!mainButton) {
+                        throw new Error('MainButton not available');
+                    }
+                    
+                    // Configure the button
+                    mainButton.setText('Submit Request');
+                    mainButton.enable();
+                    mainButton.show();
+                    
+                    // Set up click handler
+                    mainButton.onClick(handleSubmit);
+                    
+                    console.log('MainButton initialized successfully');
+                } catch (buttonError) {
+                    console.error('Error initializing MainButton:', buttonError);
+                    // Show fallback button
+                    fallbackButton.style.display = 'block';
+                    fallbackButton.addEventListener('click', handleSubmit);
+                }
 
                 isInitialized = true;
                 statusDiv.textContent = 'Ready to submit your request';
@@ -106,6 +141,9 @@
             } catch (error) {
                 console.error('Error initializing Telegram WebApp:', error);
                 showError('Failed to initialize Telegram WebApp');
+                // Show fallback button
+                fallbackButton.style.display = 'block';
+                fallbackButton.addEventListener('click', handleSubmit);
                 return false;
             }
         }
