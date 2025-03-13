@@ -1,3 +1,52 @@
+// Add this at the beginning of the file
+const BACKEND_URL = 'https://supportbot-production-b784.up.railway.app';
+
+// Function to send logs to backend
+async function sendLogToBackend(logData) {
+    try {
+        const response = await fetch(`${BACKEND_URL}/webapp-log`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(logData)
+        });
+        const data = await response.json();
+        console.log('Log sent to backend:', data);
+    } catch (error) {
+        console.error('Error sending log to backend:', error);
+    }
+}
+
+// Update the log function to send logs to backend
+function log(message, data = null) {
+    const timestamp = new Date().toISOString();
+    const logData = {
+        timestamp,
+        message,
+        data,
+        url: window.location.href,
+        userAgent: navigator.userAgent
+    };
+    
+    // Send to backend
+    sendLogToBackend(logData);
+    
+    // Update status area
+    const statusArea = document.getElementById('status');
+    if (statusArea) {
+        const logEntry = document.createElement('div');
+        logEntry.className = 'log-entry';
+        logEntry.textContent = `${timestamp}: ${message}`;
+        statusArea.insertBefore(logEntry, statusArea.firstChild);
+        
+        // Keep only last 5 logs
+        while (statusArea.children.length > 5) {
+            statusArea.removeChild(statusArea.lastChild);
+        }
+    }
+}
+
 // Access the Telegram Web App API
 let tg = window.Telegram.WebApp;
 
