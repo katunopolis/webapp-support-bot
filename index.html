@@ -174,12 +174,27 @@
                     log('MainButton properties:', buttonProps);
                     
                     // Configure the button
+                    log('Setting MainButton text');
                     mainButton.setText('Submit Request');
+                    
+                    log('Enabling MainButton');
                     mainButton.enable();
+                    
+                    log('Showing MainButton');
                     mainButton.show();
                     
-                    // Set up click handler
+                    log('Setting MainButton click handler');
                     mainButton.onClick(handleSubmit);
+                    
+                    // Verify button state
+                    log('MainButton state after initialization:', {
+                        text: mainButton.text,
+                        isVisible: mainButton.isVisible,
+                        isActive: mainButton.isActive,
+                        color: mainButton.color,
+                        textColor: mainButton.textColor,
+                        isEnabled: mainButton.isEnabled
+                    });
                     
                     log('MainButton initialized successfully');
                 } catch (buttonError) {
@@ -189,7 +204,10 @@
                         buttonState: mainButton ? {
                             text: mainButton.text,
                             isVisible: mainButton.isVisible,
-                            isActive: mainButton.isActive
+                            isActive: mainButton.isActive,
+                            color: mainButton.color,
+                            textColor: mainButton.textColor,
+                            isEnabled: mainButton.isEnabled
                         } : 'null'
                     });
                     showError('Failed to initialize submit button');
