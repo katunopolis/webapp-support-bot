@@ -154,14 +154,81 @@
                     // Initialize the main button
                     mainButton = tg.MainButton;
                     
+                    // Log button initialization
+                    fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            level: 'info',
+                            message: 'MainButton initialized',
+                            context: {
+                                platform: platform,
+                                userId: tg.initDataUnsafe.user.id,
+                                buttonState: 'initialized'
+                            }
+                        })
+                    });
+                    
                     // Set up the button with platform-specific text
                     const buttonText = platform === 'ios' ? 'Send' : 'Submit Request';
                     mainButton.setText(buttonText);
-                    mainButton.onClick(handleSubmit);
+                    
+                    // Log button text setting
+                    fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            level: 'info',
+                            message: 'MainButton text set',
+                            context: {
+                                platform: platform,
+                                buttonText: buttonText
+                            }
+                        })
+                    });
+                    
+                    mainButton.onClick(() => {
+                        // Log button click
+                        fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                level: 'info',
+                                message: 'MainButton clicked',
+                                context: {
+                                    platform: platform,
+                                    userId: tg.initDataUnsafe.user.id,
+                                    buttonState: 'clicked'
+                                }
+                            })
+                        });
+                        handleSubmit();
+                    });
                     
                     // Show button only if there's text in the input
                     if (document.getElementById('issue').value.trim()) {
                         mainButton.show();
+                        // Log button show
+                        fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                level: 'info',
+                                message: 'MainButton shown',
+                                context: {
+                                    platform: platform,
+                                    buttonState: 'visible'
+                                }
+                            })
+                        });
                     }
 
                     // Log successful initialization
@@ -175,13 +242,29 @@
                             message: 'WebApp initialized successfully',
                             context: {
                                 platform: platform,
-                                userId: tg.initDataUnsafe.user.id
+                                userId: tg.initDataUnsafe.user.id,
+                                buttonState: 'ready'
                             }
                         })
                     });
                 } else {
                     // Show regular button for web browser
                     document.getElementById('submitButton').style.display = 'block';
+                    // Log web browser fallback
+                    fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            level: 'info',
+                            message: 'Using web browser fallback button',
+                            context: {
+                                platform: 'web',
+                                buttonState: 'fallback'
+                            }
+                        })
+                    });
                 }
             } catch (error) {
                 console.error('Error initializing WebApp:', error);
@@ -197,7 +280,8 @@
                         message: 'Failed to initialize WebApp',
                         context: {
                             error: error.message,
-                            platform: platform
+                            platform: platform,
+                            buttonState: 'error'
                         }
                     })
                 });
@@ -212,6 +296,22 @@
             
             if (!issue) {
                 showError('Please describe your issue');
+                // Log empty submission attempt
+                fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        level: 'warning',
+                        message: 'Empty submission attempt',
+                        context: {
+                            platform: platform,
+                            userId: isWebApp ? tg.initDataUnsafe.user.id : null,
+                            buttonState: 'disabled'
+                        }
+                    })
+                });
                 return;
             }
 
@@ -228,7 +328,8 @@
                         context: {
                             platform: platform,
                             userId: isWebApp ? tg.initDataUnsafe.user.id : null,
-                            issueLength: issue.length
+                            issueLength: issue.length,
+                            buttonState: 'submitting'
                         }
                     })
                 });
@@ -237,6 +338,21 @@
                 if (isWebApp && mainButton) {
                     mainButton.disable();
                     mainButton.showProgress();
+                    // Log button state change
+                    fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            level: 'info',
+                            message: 'MainButton disabled and showing progress',
+                            context: {
+                                platform: platform,
+                                buttonState: 'progress'
+                            }
+                        })
+                    });
                 } else {
                     const submitButton = document.getElementById('submitButton');
                     submitButton.disabled = true;
@@ -271,7 +387,8 @@
                             context: {
                                 platform: platform,
                                 userId: isWebApp ? tg.initDataUnsafe.user.id : null,
-                                requestId: data.request_id
+                                requestId: data.request_id,
+                                buttonState: 'success'
                             }
                         })
                     });
@@ -280,6 +397,21 @@
                     if (isWebApp && mainButton) {
                         mainButton.hideProgress();
                         mainButton.disable();
+                        // Log button state change
+                        await fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                level: 'info',
+                                message: 'MainButton disabled after successful submission',
+                                context: {
+                                    platform: platform,
+                                    buttonState: 'disabled'
+                                }
+                            })
+                        });
                     } else {
                         const submitButton = document.getElementById('submitButton');
                         submitButton.disabled = true;
@@ -309,7 +441,8 @@
                             context: {
                                 error: data.message,
                                 platform: platform,
-                                userId: isWebApp ? tg.initDataUnsafe.user.id : null
+                                userId: isWebApp ? tg.initDataUnsafe.user.id : null,
+                                buttonState: 'error'
                             }
                         })
                     });
@@ -319,6 +452,21 @@
                     if (isWebApp && mainButton) {
                         mainButton.hideProgress();
                         mainButton.enable();
+                        // Log button state change
+                        await fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                level: 'info',
+                                message: 'MainButton re-enabled after error',
+                                context: {
+                                    platform: platform,
+                                    buttonState: 'enabled'
+                                }
+                            })
+                        });
                     } else {
                         const submitButton = document.getElementById('submitButton');
                         submitButton.disabled = false;
@@ -339,7 +487,8 @@
                         context: {
                             error: error.message,
                             platform: platform,
-                            userId: isWebApp ? tg.initDataUnsafe.user.id : null
+                            userId: isWebApp ? tg.initDataUnsafe.user.id : null,
+                            buttonState: 'error'
                         }
                     })
                 });
@@ -349,6 +498,21 @@
                 if (isWebApp && mainButton) {
                     mainButton.hideProgress();
                     mainButton.enable();
+                    // Log button state change
+                    await fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            level: 'info',
+                            message: 'MainButton re-enabled after error',
+                            context: {
+                                platform: platform,
+                                buttonState: 'enabled'
+                            }
+                        })
+                    });
                 } else {
                     const submitButton = document.getElementById('submitButton');
                     submitButton.disabled = false;
@@ -358,16 +522,66 @@
         }
 
         // Handle input changes to show/hide button
-        document.getElementById('issue').addEventListener('input', () => {
-            const hasText = document.getElementById('issue').value.trim() !== '';
-            if (isWebApp && mainButton) {
-                if (hasText) {
-                    mainButton.show();
+        document.getElementById('issue').addEventListener('input', async () => {
+            try {
+                const hasText = document.getElementById('issue').value.trim() !== '';
+                if (isWebApp && mainButton) {
+                    if (hasText) {
+                        mainButton.show();
+                        // Log button show
+                        await fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                level: 'info',
+                                message: 'MainButton shown on input',
+                                context: {
+                                    platform: platform,
+                                    buttonState: 'visible'
+                                }
+                            })
+                        });
+                    } else {
+                        mainButton.hide();
+                        // Log button hide
+                        await fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                level: 'info',
+                                message: 'MainButton hidden on empty input',
+                                context: {
+                                    platform: platform,
+                                    buttonState: 'hidden'
+                                }
+                            })
+                        });
+                    }
                 } else {
-                    mainButton.hide();
+                    document.getElementById('submitButton').style.display = hasText ? 'block' : 'none';
                 }
-            } else {
-                document.getElementById('submitButton').style.display = hasText ? 'block' : 'none';
+            } catch (error) {
+                console.error('Error handling input change:', error);
+                // Log error
+                await fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        level: 'error',
+                        message: 'Error handling input change',
+                        context: {
+                            error: error.message,
+                            platform: platform,
+                            buttonState: 'error'
+                        }
+                    })
+                });
             }
         });
 
