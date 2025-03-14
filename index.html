@@ -163,6 +163,22 @@
                     if (document.getElementById('issue').value.trim()) {
                         mainButton.show();
                     }
+
+                    // Log successful initialization
+                    fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            level: 'info',
+                            message: 'WebApp initialized successfully',
+                            context: {
+                                platform: platform,
+                                userId: tg.initDataUnsafe.user.id
+                            }
+                        })
+                    });
                 } else {
                     // Show regular button for web browser
                     document.getElementById('submitButton').style.display = 'block';
@@ -170,6 +186,21 @@
             } catch (error) {
                 console.error('Error initializing WebApp:', error);
                 showError('Failed to initialize Telegram WebApp');
+                // Log error
+                fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        level: 'error',
+                        message: 'Failed to initialize WebApp',
+                        context: {
+                            error: error.message,
+                            platform: platform
+                        }
+                    })
+                });
                 // Fallback to regular button
                 document.getElementById('submitButton').style.display = 'block';
             }
@@ -185,6 +216,23 @@
             }
 
             try {
+                // Log submission attempt
+                await fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        level: 'info',
+                        message: 'Submitting support request',
+                        context: {
+                            platform: platform,
+                            userId: isWebApp ? tg.initDataUnsafe.user.id : null,
+                            issueLength: issue.length
+                        }
+                    })
+                });
+
                 // Disable button and show progress
                 if (isWebApp && mainButton) {
                     mainButton.disable();
@@ -211,6 +259,23 @@
                 const data = await response.json();
 
                 if (response.ok) {
+                    // Log successful submission
+                    await fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            level: 'info',
+                            message: 'Support request submitted successfully',
+                            context: {
+                                platform: platform,
+                                userId: isWebApp ? tg.initDataUnsafe.user.id : null,
+                                requestId: data.request_id
+                            }
+                        })
+                    });
+
                     // Hide progress and disable button before redirect
                     if (isWebApp && mainButton) {
                         mainButton.hideProgress();
@@ -232,6 +297,23 @@
                         window.location.href = data.chat_url;
                     }
                 } else {
+                    // Log error
+                    await fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            level: 'error',
+                            message: 'Failed to submit support request',
+                            context: {
+                                error: data.message,
+                                platform: platform,
+                                userId: isWebApp ? tg.initDataUnsafe.user.id : null
+                            }
+                        })
+                    });
+
                     showError(data.message || 'Error submitting request');
                     // Reset button state on error
                     if (isWebApp && mainButton) {
@@ -245,6 +327,23 @@
                 }
             } catch (error) {
                 console.error('Error during submission:', error);
+                // Log error
+                await fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        level: 'error',
+                        message: 'Error during submission',
+                        context: {
+                            error: error.message,
+                            platform: platform,
+                            userId: isWebApp ? tg.initDataUnsafe.user.id : null
+                        }
+                    })
+                });
+
                 showError('Error submitting request. Please try again.');
                 // Reset button state on error
                 if (isWebApp && mainButton) {
