@@ -154,7 +154,7 @@
                     // Initialize the main button
                     mainButton = tg.MainButton;
                     
-                    // Log button initialization with critical info
+                    // Log button initialization
                     fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
                         method: 'POST',
                         headers: {
@@ -162,7 +162,7 @@
                         },
                         body: JSON.stringify({
                             level: 'info',
-                            message: 'MainButton init',
+                            message: 'MainButton initialized',
                             context: {
                                 platform: platform,
                                 userId: tg.initDataUnsafe.user.id,
@@ -175,8 +175,51 @@
                     const buttonText = platform === 'ios' ? 'Send' : 'Submit Request';
                     mainButton.setText(buttonText);
                     
+                    // Add input event listener for the textarea
+                    document.getElementById('issue').addEventListener('input', function(e) {
+                        const hasText = e.target.value.trim().length > 0;
+                        if (hasText) {
+                            mainButton.show();
+                            // Log button show
+                            fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    level: 'info',
+                                    message: 'MainButton shown',
+                                    context: {
+                                        platform: platform,
+                                        userId: tg.initDataUnsafe.user.id,
+                                        buttonState: 'show',
+                                        issueLength: e.target.value.length
+                                    }
+                                })
+                            });
+                        } else {
+                            mainButton.hide();
+                            // Log button hide
+                            fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    level: 'info',
+                                    message: 'MainButton hidden',
+                                    context: {
+                                        platform: platform,
+                                        userId: tg.initDataUnsafe.user.id,
+                                        buttonState: 'hide'
+                                    }
+                                })
+                            });
+                        }
+                    });
+                    
                     mainButton.onClick(() => {
-                        // Log button click with critical info
+                        // Log button click
                         fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
                             method: 'POST',
                             headers: {
@@ -184,36 +227,17 @@
                             },
                             body: JSON.stringify({
                                 level: 'info',
-                                message: 'MainButton click',
+                                message: 'MainButton clicked',
                                 context: {
                                     platform: platform,
                                     userId: tg.initDataUnsafe.user.id,
-                                    buttonState: 'click'
+                                    buttonState: 'click',
+                                    issueLength: document.getElementById('issue').value.length
                                 }
                             })
                         });
                         handleSubmit();
                     });
-                    
-                    // Show button only if there's text in the input
-                    if (document.getElementById('issue').value.trim()) {
-                        mainButton.show();
-                        // Log button show with critical info
-                        fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                level: 'info',
-                                message: 'MainButton show',
-                                context: {
-                                    platform: platform,
-                                    buttonState: 'show'
-                                }
-                            })
-                        });
-                    }
 
                     // Log successful initialization
                     fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
@@ -251,9 +275,7 @@
                     });
                 }
             } catch (error) {
-                console.error('Error initializing WebApp:', error);
-                showError('Failed to initialize Telegram WebApp');
-                // Log error
+                // Log initialization error
                 fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
                     method: 'POST',
                     headers: {
@@ -261,7 +283,7 @@
                     },
                     body: JSON.stringify({
                         level: 'error',
-                        message: 'Failed to initialize WebApp',
+                        message: 'WebApp initialization failed',
                         context: {
                             error: error.message,
                             platform: platform,
@@ -269,39 +291,44 @@
                         }
                     })
                 });
-                // Fallback to regular button
-                document.getElementById('submitButton').style.display = 'block';
+                console.error('WebApp initialization error:', error);
             }
         }
 
         // Handle form submission
         async function handleSubmit() {
             const issue = document.getElementById('issue').value.trim();
-            
             if (!issue) {
                 showError('Please describe your issue');
-                // Log empty submission attempt
-                fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        level: 'warning',
-                        message: 'Empty submission attempt',
-                        context: {
-                            platform: platform,
-                            userId: isWebApp ? tg.initDataUnsafe.user.id : null,
-                            buttonState: 'disabled'
-                        }
-                    })
-                });
                 return;
             }
 
             try {
+                // Disable button and show loading state
+                if (mainButton) {
+                    mainButton.hide();
+                    // Log button hide
+                    fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            level: 'info',
+                            message: 'MainButton hide during submission',
+                            context: {
+                                platform: platform,
+                                userId: tg.initDataUnsafe.user.id,
+                                buttonState: 'submitting'
+                            }
+                        })
+                    });
+                } else {
+                    document.getElementById('submitButton').disabled = true;
+                }
+
                 // Log submission attempt
-                await fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
+                fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -311,179 +338,75 @@
                         message: 'Submitting support request',
                         context: {
                             platform: platform,
-                            userId: isWebApp ? tg.initDataUnsafe.user.id : null,
-                            issueLength: issue.length,
-                            buttonState: 'submitting'
+                            userId: tg.initDataUnsafe.user.id,
+                            issueLength: issue.length
                         }
                     })
                 });
 
-                // Disable button and show progress
-                if (isWebApp && mainButton) {
-                    mainButton.disable();
-                    mainButton.showProgress();
-                    // Log button state change
-                    fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            level: 'info',
-                            message: 'MainButton disabled and showing progress',
-                            context: {
-                                platform: platform,
-                                buttonState: 'progress'
-                            }
-                        })
-                    });
-                } else {
-                    const submitButton = document.getElementById('submitButton');
-                    submitButton.disabled = true;
-                    submitButton.querySelector('.loading').style.display = 'block';
-                }
-
-                // Send request
                 const response = await fetch('https://supportbot-production-b784.up.railway.app/support-request', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        user_id: isWebApp ? tg.initDataUnsafe.user.id : null,
-                        issue: issue,
-                        platform: platform
+                        user_id: tg.initDataUnsafe.user.id,
+                        issue: issue
                     })
                 });
 
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
                 const data = await response.json();
+                
+                // Log successful submission
+                fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        level: 'info',
+                        message: 'Support request submitted successfully',
+                        context: {
+                            platform: platform,
+                            userId: tg.initDataUnsafe.user.id,
+                            requestId: data.request_id
+                        }
+                    })
+                });
 
-                if (response.ok) {
-                    // Log successful submission
-                    await fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            level: 'info',
-                            message: 'Support request submitted successfully',
-                            context: {
-                                platform: platform,
-                                userId: isWebApp ? tg.initDataUnsafe.user.id : null,
-                                requestId: data.request_id,
-                                buttonState: 'success'
-                            }
-                        })
-                    });
-
-                    // Hide progress and disable button before redirect
-                    if (isWebApp && mainButton) {
-                        mainButton.hideProgress();
-                        mainButton.disable();
-                        // Log button state change
-                        await fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                level: 'info',
-                                message: 'MainButton disabled after successful submission',
-                                context: {
-                                    platform: platform,
-                                    buttonState: 'disabled'
-                                }
-                            })
-                        });
-                    } else {
-                        const submitButton = document.getElementById('submitButton');
-                        submitButton.disabled = true;
-                        submitButton.querySelector('.loading').style.display = 'none';
-                    }
-                    
-                    // Platform-specific redirect handling
-                    if (platform === 'ios' || platform === 'android') {
-                        // Mobile platforms might need a slight delay
-                        setTimeout(() => {
-                            window.location.href = data.chat_url;
-                        }, 1500);
-                    } else {
-                        // Desktop and web can redirect immediately
-                        window.location.href = data.chat_url;
-                    }
-                } else {
-                    // Log error
-                    await fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            level: 'error',
-                            message: 'Failed to submit support request',
-                            context: {
-                                error: data.message,
-                                platform: platform,
-                                userId: isWebApp ? tg.initDataUnsafe.user.id : null,
-                                buttonState: 'error'
-                            }
-                        })
-                    });
-
-                    showError(data.message || 'Error submitting request');
-                    // Reset button state on error
-                    if (isWebApp && mainButton) {
-                        mainButton.hideProgress();
-                        mainButton.enable();
-                        // Log button state change
-                        await fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                level: 'info',
-                                message: 'MainButton re-enabled after error',
-                                context: {
-                                    platform: platform,
-                                    buttonState: 'enabled'
-                                }
-                            })
-                        });
-                    } else {
-                        const submitButton = document.getElementById('submitButton');
-                        submitButton.disabled = false;
-                        submitButton.querySelector('.loading').style.display = 'none';
-                    }
+                // Redirect to chat URL
+                if (data.chat_url) {
+                    window.location.href = data.chat_url;
                 }
             } catch (error) {
-                console.error('Error during submission:', error);
-                // Log error
-                await fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
+                // Log submission error
+                fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
                         level: 'error',
-                        message: 'Error during submission',
+                        message: 'Failed to submit support request',
                         context: {
                             error: error.message,
                             platform: platform,
-                            userId: isWebApp ? tg.initDataUnsafe.user.id : null,
+                            userId: tg.initDataUnsafe.user.id,
                             buttonState: 'error'
                         }
                     })
                 });
-
-                showError('Error submitting request. Please try again.');
-                // Reset button state on error
-                if (isWebApp && mainButton) {
-                    mainButton.hideProgress();
-                    mainButton.enable();
-                    // Log button state change
-                    await fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
+                showError('Failed to submit request. Please try again.');
+                
+                // Re-enable button
+                if (mainButton) {
+                    mainButton.show();
+                    // Log button re-enable
+                    fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
@@ -493,81 +416,16 @@
                             message: 'MainButton re-enabled after error',
                             context: {
                                 platform: platform,
+                                userId: tg.initDataUnsafe.user.id,
                                 buttonState: 'enabled'
                             }
                         })
                     });
                 } else {
-                    const submitButton = document.getElementById('submitButton');
-                    submitButton.disabled = false;
-                    submitButton.querySelector('.loading').style.display = 'none';
+                    document.getElementById('submitButton').disabled = false;
                 }
             }
         }
-
-        // Handle input changes to show/hide button
-        document.getElementById('issue').addEventListener('input', async () => {
-            try {
-                const hasText = document.getElementById('issue').value.trim() !== '';
-                if (isWebApp && mainButton) {
-                    if (hasText) {
-                        mainButton.show();
-                        // Log button show
-                        await fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                level: 'info',
-                                message: 'MainButton shown on input',
-                                context: {
-                                    platform: platform,
-                                    buttonState: 'visible'
-                                }
-                            })
-                        });
-                    } else {
-                        mainButton.hide();
-                        // Log button hide
-                        await fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                level: 'info',
-                                message: 'MainButton hidden on empty input',
-                                context: {
-                                    platform: platform,
-                                    buttonState: 'hidden'
-                                }
-                            })
-                        });
-                    }
-                } else {
-                    document.getElementById('submitButton').style.display = hasText ? 'block' : 'none';
-                }
-            } catch (error) {
-                console.error('Error handling input change:', error);
-                // Log error
-                await fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        level: 'error',
-                        message: 'Error handling input change',
-                        context: {
-                            error: error.message,
-                            platform: platform,
-                            buttonState: 'error'
-                        }
-                    })
-                });
-            }
-        });
 
         // Error handling functions
         function showError(message) {
@@ -588,14 +446,104 @@
         if (isWebApp) {
             // Handle viewport changes
             tg.onEvent('viewportChanged', () => {
-                // Update layout if needed
-                console.log('Viewport changed');
+                // Log viewport change
+                fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        level: 'info',
+                        message: 'Viewport changed',
+                        context: {
+                            platform: platform,
+                            userId: tg.initDataUnsafe.user.id,
+                            viewportHeight: tg.viewportHeight,
+                            viewportStableHeight: tg.viewportStableHeight,
+                            isExpanded: tg.isExpanded
+                        }
+                    })
+                });
+
+                // Update container padding for safe areas
+                const container = document.querySelector('.container');
+                if (container) {
+                    container.style.paddingBottom = `calc(20px + ${tg.viewportStableHeight}px)`;
+                }
             });
 
             // Handle theme changes
             tg.onEvent('themeChanged', () => {
-                // Update theme if needed
-                console.log('Theme changed');
+                // Log theme change
+                fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        level: 'info',
+                        message: 'Theme changed',
+                        context: {
+                            platform: platform,
+                            userId: tg.initDataUnsafe.user.id,
+                            colorScheme: tg.colorScheme,
+                            themeParams: tg.themeParams
+                        }
+                    })
+                });
+
+                // Update theme colors
+                document.documentElement.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color);
+                document.documentElement.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color);
+                document.documentElement.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color);
+                document.documentElement.style.setProperty('--tg-theme-button-text-color', tg.themeParams.button_text_color);
+                document.documentElement.style.setProperty('--tg-theme-hint-color', tg.themeParams.hint_color);
+            });
+
+            // Handle main button events
+            mainButton.onClick(() => {
+                // Log button click with additional context
+                fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        level: 'info',
+                        message: 'MainButton clicked',
+                        context: {
+                            platform: platform,
+                            userId: tg.initDataUnsafe.user.id,
+                            buttonState: 'click',
+                            issueLength: document.getElementById('issue').value.length,
+                            isVisible: mainButton.isVisible,
+                            buttonText: mainButton.text
+                        }
+                    })
+                });
+                handleSubmit();
+            });
+
+            // Handle back button if needed
+            tg.onEvent('backButtonClicked', () => {
+                // Log back button click
+                fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        level: 'info',
+                        message: 'Back button clicked',
+                        context: {
+                            platform: platform,
+                            userId: tg.initDataUnsafe.user.id,
+                            buttonState: 'back'
+                        }
+                    })
+                });
+                // Close the WebApp
+                tg.close();
             });
         }
     </script>
