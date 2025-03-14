@@ -154,7 +154,7 @@
                     // Initialize the main button
                     mainButton = tg.MainButton;
                     
-                    // Log button initialization
+                    // Log button initialization with critical info
                     fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
                         method: 'POST',
                         headers: {
@@ -162,11 +162,11 @@
                         },
                         body: JSON.stringify({
                             level: 'info',
-                            message: 'MainButton initialized',
+                            message: 'MainButton init',
                             context: {
                                 platform: platform,
                                 userId: tg.initDataUnsafe.user.id,
-                                buttonState: 'initialized'
+                                buttonState: 'init'
                             }
                         })
                     });
@@ -175,24 +175,8 @@
                     const buttonText = platform === 'ios' ? 'Send' : 'Submit Request';
                     mainButton.setText(buttonText);
                     
-                    // Log button text setting
-                    fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            level: 'info',
-                            message: 'MainButton text set',
-                            context: {
-                                platform: platform,
-                                buttonText: buttonText
-                            }
-                        })
-                    });
-                    
                     mainButton.onClick(() => {
-                        // Log button click
+                        // Log button click with critical info
                         fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
                             method: 'POST',
                             headers: {
@@ -200,11 +184,11 @@
                             },
                             body: JSON.stringify({
                                 level: 'info',
-                                message: 'MainButton clicked',
+                                message: 'MainButton click',
                                 context: {
                                     platform: platform,
                                     userId: tg.initDataUnsafe.user.id,
-                                    buttonState: 'clicked'
+                                    buttonState: 'click'
                                 }
                             })
                         });
@@ -214,7 +198,7 @@
                     // Show button only if there's text in the input
                     if (document.getElementById('issue').value.trim()) {
                         mainButton.show();
-                        // Log button show
+                        // Log button show with critical info
                         fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
                             method: 'POST',
                             headers: {
@@ -222,10 +206,10 @@
                             },
                             body: JSON.stringify({
                                 level: 'info',
-                                message: 'MainButton shown',
+                                message: 'MainButton show',
                                 context: {
                                     platform: platform,
-                                    buttonState: 'visible'
+                                    buttonState: 'show'
                                 }
                             })
                         });
