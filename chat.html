@@ -222,6 +222,10 @@
                 if (tg) {
                     tg.onEvent('themeChanged', () => {
                         updateTheme();
+                        logWebAppEvent('Theme changed', {
+                            colorScheme: tg.colorScheme,
+                            themeParams: tg.themeParams
+                        });
                     });
                     
                     // Initial theme setup
@@ -475,6 +479,29 @@
                 document.documentElement.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color);
                 document.documentElement.style.setProperty('--tg-theme-button-text-color', tg.themeParams.button_text_color);
                 document.documentElement.style.setProperty('--tg-theme-hint-color', tg.themeParams.hint_color);
+                document.documentElement.style.setProperty('--tg-theme-link-color', tg.themeParams.link_color);
+                document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', tg.themeParams.secondary_bg_color);
+                
+                // Update chat-specific theme elements
+                const chatContainer = document.getElementById('chat-container');
+                const messageInput = document.getElementById('message-input');
+                const sendButton = document.getElementById('send-button');
+                
+                if (chatContainer) {
+                    chatContainer.style.backgroundColor = tg.themeParams.bg_color;
+                    chatContainer.style.color = tg.themeParams.text_color;
+                }
+                
+                if (messageInput) {
+                    messageInput.style.backgroundColor = tg.themeParams.secondary_bg_color;
+                    messageInput.style.color = tg.themeParams.text_color;
+                    messageInput.style.borderColor = tg.themeParams.hint_color;
+                }
+                
+                if (sendButton) {
+                    sendButton.style.backgroundColor = tg.themeParams.button_color;
+                    sendButton.style.color = tg.themeParams.button_text_color;
+                }
             }
         }
 

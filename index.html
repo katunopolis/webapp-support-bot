@@ -195,6 +195,18 @@
                         handleSubmit();
                     });
 
+                    // Handle theme changes
+                    tg.onEvent('themeChanged', () => {
+                        updateTheme();
+                        logWebAppEvent('Theme changed', {
+                            colorScheme: tg.colorScheme,
+                            themeParams: tg.themeParams
+                        });
+                    });
+
+                    // Initial theme setup
+                    updateTheme();
+
                     // Log successful initialization
                     logWebAppEvent('WebApp initialized successfully', { 
                         buttonState: 'ready',
@@ -360,21 +372,6 @@
                 }
             });
 
-            // Handle theme changes
-            tg.onEvent('themeChanged', () => {
-                logWebAppEvent('Theme changed', {
-                    colorScheme: tg.colorScheme,
-                    themeParams: tg.themeParams
-                });
-
-                // Update theme colors
-                document.documentElement.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color);
-                document.documentElement.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color);
-                document.documentElement.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color);
-                document.documentElement.style.setProperty('--tg-theme-button-text-color', tg.themeParams.button_text_color);
-                document.documentElement.style.setProperty('--tg-theme-hint-color', tg.themeParams.hint_color);
-            });
-
             // Handle back button
             tg.onEvent('backButtonClicked', () => {
                 logWebAppEvent('Back button clicked', { buttonState: 'back' });
@@ -392,6 +389,19 @@
             setTimeout(() => {
                 errorDiv.style.display = 'none';
             }, 5000);
+        }
+
+        // Update theme colors
+        function updateTheme() {
+            if (tg && tg.themeParams) {
+                document.documentElement.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color);
+                document.documentElement.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color);
+                document.documentElement.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color);
+                document.documentElement.style.setProperty('--tg-theme-button-text-color', tg.themeParams.button_text_color);
+                document.documentElement.style.setProperty('--tg-theme-hint-color', tg.themeParams.hint_color);
+                document.documentElement.style.setProperty('--tg-theme-link-color', tg.themeParams.link_color);
+                document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', tg.themeParams.secondary_bg_color);
+            }
         }
     </script>
 </body>
