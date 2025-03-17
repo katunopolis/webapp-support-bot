@@ -3,12 +3,19 @@
 <head>
     <title>Support Chat</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#2481cc">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <style>
+        /* CSS Variables will be filled by Telegram theme */
         :root {
             --tg-theme-bg-color: #ffffff;
             --tg-theme-text-color: #000000;
             --tg-theme-button-color: #2481cc;
             --tg-theme-button-text-color: #ffffff;
+            --tg-theme-hint-color: #999999;
+            --tg-theme-secondary-bg-color: #f1f1f1;
         }
 
         body {
@@ -17,32 +24,59 @@
             padding: 0;
             background-color: var(--tg-theme-bg-color);
             color: var(--tg-theme-text-color);
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
 
         .chat-container {
             max-width: 600px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 10px;
             padding-bottom: 80px;
         }
 
+        .chat-header {
+            text-align: center;
+            padding: 10px;
+            background-color: var(--tg-theme-secondary-bg-color, #f1f1f1);
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
         .message {
-            margin: 10px 0;
+            margin: 8px 0;
             padding: 10px;
             border-radius: 10px;
             max-width: 80%;
             word-wrap: break-word;
+            position: relative;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .user-message {
-            background-color: var(--tg-theme-button-color);
-            color: var(--tg-theme-button-text-color);
+            background-color: var(--tg-theme-button-color, #2481cc);
+            color: var(--tg-theme-button-text-color, #ffffff);
             margin-left: auto;
+            border-bottom-right-radius: 2px;
         }
 
         .admin-message {
-            background-color: #f0f0f0;
+            background-color: var(--tg-theme-secondary-bg-color, #f0f0f0);
+            color: var(--tg-theme-text-color, #000000);
             margin-right: auto;
+            border-bottom-left-radius: 2px;
+        }
+
+        .message-time {
+            font-size: 0.7rem;
+            opacity: 0.7;
+            margin-top: 5px;
+            text-align: right;
         }
 
         .input-container {
@@ -50,463 +84,364 @@
             bottom: 0;
             left: 0;
             right: 0;
-            padding: 20px;
+            padding: 10px;
             background: var(--tg-theme-bg-color);
-            border-top: 1px solid #ddd;
+            border-top: 1px solid var(--tg-theme-hint-color, #ddd);
             display: flex;
             gap: 10px;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
         }
 
         .message-input {
             flex: 1;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
+            padding: 12px;
+            border: 1px solid var(--tg-theme-hint-color, #ddd);
+            border-radius: 18px;
             background: var(--tg-theme-bg-color);
             color: var(--tg-theme-text-color);
+            font-size: 16px;
+            outline: none;
+            resize: none;
+            max-height: 100px;
         }
 
         .send-button {
-            padding: 10px 20px;
-            background: var(--tg-theme-button-color);
-            color: var(--tg-theme-button-text-color);
+            padding: 0 15px;
+            background: var(--tg-theme-button-color, #2481cc);
+            color: var(--tg-theme-button-text-color, #ffffff);
             border: none;
-            border-radius: 5px;
+            border-radius: 18px;
             cursor: pointer;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .send-button:active {
+            opacity: 0.8;
         }
 
         .status {
             text-align: center;
             padding: 10px;
-            color: #666;
-            background: #f8f9fa;
+            color: var(--tg-theme-hint-color, #666);
+            background: var(--tg-theme-secondary-bg-color, #f8f9fa);
             border-radius: 5px;
             margin: 10px 0;
-        }
-
-        .waiting-status {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
         }
 
         .spinner {
             width: 20px;
             height: 20px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid var(--tg-theme-button-color);
+            border: 3px solid rgba(0, 0, 0, 0.1);
+            border-top: 3px solid var(--tg-theme-button-color, #2481cc);
             border-radius: 50%;
             animation: spin 1s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 8px;
         }
 
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--tg-theme-bg-color, rgba(255, 255, 255, 0.9));
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .error-message {
+            color: #e74c3c;
+            text-align: center;
+            margin: 10px 0;
+            padding: 10px;
+            background-color: rgba(231, 76, 60, 0.1);
+            border-radius: 5px;
+            display: none;
+        }
     </style>
 </head>
 <body>
-    <div class="chat-container">
-        <div id="messages"></div>
-        <div class="status" id="status">
-            <div class="waiting-status">
-                <div class="spinner"></div>
-                <span>Waiting for admin to join the chat...</span>
-            </div>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <p>Loading chat...</p>
+    </div>
+
+    <div class="error-message" id="errorMessage"></div>
+
+    <div class="chat-container" id="chatContainer">
+        <div class="chat-header" id="chatHeader">
+            <h3 id="requestTitle">Support Request</h3>
+            <div id="requestStatus">Loading...</div>
         </div>
-        <div class="input-container">
-            <input type="text" class="message-input" id="messageInput" placeholder="Type your message...">
-            <button class="send-button" onclick="sendMessage()">Send</button>
-        </div>
+        <div id="messagesContainer"></div>
+    </div>
+
+    <div class="input-container">
+        <textarea class="message-input" id="messageInput" placeholder="Type a message..." rows="1"></textarea>
+        <button class="send-button" id="sendButton">Send</button>
     </div>
 
     <script>
-        let tg = window.Telegram.WebApp;
-        let requestId = null;
-        let isAdmin = false;
-        let userId = null;
-        let adminJoined = false;
-
-        // Initialize the chat
-        async function initChat() {
+        // Initialize Telegram WebApp
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.ready();
+        
+        // Set theme
+        document.documentElement.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color || '#ffffff');
+        document.documentElement.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color || '#000000');
+        document.documentElement.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color || '#2481cc');
+        document.documentElement.style.setProperty('--tg-theme-button-text-color', tg.themeParams.button_text_color || '#ffffff');
+        document.documentElement.style.setProperty('--tg-theme-hint-color', tg.themeParams.hint_color || '#999999');
+        document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', tg.themeParams.secondary_bg_color || '#f1f1f1');
+        
+        // Elements
+        const chatContainer = document.getElementById('chatContainer');
+        const messagesContainer = document.getElementById('messagesContainer');
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const errorMessage = document.getElementById('errorMessage');
+        const requestTitle = document.getElementById('requestTitle');
+        const requestStatus = document.getElementById('requestStatus');
+        
+        // Get parameters from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const requestId = urlParams.get('requestId');
+        const adminId = urlParams.get('adminId');
+        
+        // API endpoints - dynamically set based on environment
+        const isLocalDev = window.location.hostname === 'localhost';
+        const API_BASE_URL = isLocalDev ? 'http://localhost:8000' : 'https://supportbot-production-b784.up.railway.app';
+        
+        let lastMessageTimestamp = null;
+        let pollingInterval = null;
+        
+        // Check if we have required parameters
+        if (!requestId) {
+            showError("Missing request ID. Cannot load chat.");
+            hideLoading();
+            return;
+        }
+        
+        async function loadChatHistory() {
             try {
-                console.log('Initializing chat...');
+                const response = await fetch(`${API_BASE_URL}/api/chat/${requestId}`);
                 
-                // Initialize Telegram WebApp
-                if (tg) {
-                    tg.expand();
-                    tg.enableClosingConfirmation();
-                    
-                    // Set up main button if needed
-                    if (tg.MainButton) {
-                        tg.MainButton.setText('Send');
-                        tg.MainButton.hide();
-                        
-                        // Handle main button click
-                        tg.MainButton.onClick(() => {
-                            sendMessage();
-                        });
-                    }
-                    
-                    // Log WebApp initialization
-                    await fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            level: 'info',
-                            message: 'Chat WebApp initialized',
-                            context: {
-                                platform: tg.platform,
-                                userId: tg.initDataUnsafe.user.id,
-                                colorScheme: tg.colorScheme
-                            }
-                        })
-                    });
+                if (!response.ok) {
+                    throw new Error(`Failed to load chat: ${response.status} ${response.statusText}`);
                 }
                 
-                // Get request ID from URL
-                const path = window.location.pathname;
-                requestId = path.split('/').pop();
-                console.log('Request ID:', requestId);
+                const data = await response.json();
                 
-                // Get user info from URL parameters
-                const urlParams = new URLSearchParams(window.location.search);
-                userId = urlParams.get('user_id');
-                isAdmin = urlParams.get('is_admin') === 'true';
-                console.log('User info from URL:', { userId, isAdmin });
+                // Update chat header
+                requestTitle.textContent = `Support Request #${data.request_id}`;
+                requestStatus.textContent = `Status: ${data.status}`;
                 
-                if (!userId) {
-                    console.error('No user ID available in URL parameters');
-                    document.getElementById('status').innerHTML = 'Error: User ID not found';
-                    // Log error to backend
-                    await fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            level: 'error',
-                            message: 'No user ID available in URL parameters',
-                            context: {
-                                requestId,
-                                url: window.location.href
-                            }
-                        })
-                    });
-                    return;
+                // Clear existing messages
+                messagesContainer.innerHTML = '';
+                
+                // Add system message about the issue
+                addSystemMessage(`Issue: ${data.issue}`);
+                
+                // Add all messages
+                data.messages.forEach(msg => {
+                    const isAdmin = msg.sender_type === 'admin';
+                    const sender = isAdmin ? 'Admin' : 'User';
+                    addMessage(msg.message, isAdmin, new Date(msg.timestamp));
+                });
+                
+                // Update last message timestamp
+                if (data.messages.length > 0) {
+                    lastMessageTimestamp = new Date(data.messages[data.messages.length - 1].timestamp);
                 }
                 
-                // Load messages
-                await loadMessages();
+                // Scroll to bottom
+                scrollToBottom();
+                hideLoading();
                 
                 // Start polling for new messages
-                setInterval(loadMessages, 3000);
-                
-                // Set up input event listener for the message input
-                const messageInput = document.getElementById('messageInput');
-                messageInput.addEventListener('input', function(e) {
-                    const hasText = e.target.value.trim().length > 0;
-                    if (tg && tg.MainButton) {
-                        if (hasText) {
-                            tg.MainButton.show();
-                        } else {
-                            tg.MainButton.hide();
-                        }
-                    }
-                });
-                
-                // Handle theme changes
-                if (tg) {
-                    tg.onEvent('themeChanged', () => {
-                        updateTheme();
-                        logWebAppEvent('Theme changed', {
-                            colorScheme: tg.colorScheme,
-                            themeParams: tg.themeParams
-                        });
-                    });
-                    
-                    // Initial theme setup
-                    updateTheme();
-                }
-                
-                console.log('Chat initialized successfully');
+                startPolling();
             } catch (error) {
-                console.error('Error initializing chat:', error);
-                document.getElementById('status').innerHTML = 'Error initializing chat';
-                // Log error to backend
-                await fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        level: 'error',
-                        message: 'Error initializing chat',
-                        context: {
-                            error: error.message,
-                            requestId,
-                            userId
-                        }
-                    })
-                });
+                console.error('Error loading chat:', error);
+                showError(`Failed to load chat: ${error.message}`);
+                hideLoading();
             }
         }
-
-        // Load messages from the server
-        async function loadMessages() {
-            try {
-                console.log('Loading messages for request:', requestId);
-                const response = await fetch(`https://supportbot-production-b784.up.railway.app/chat/${requestId}/messages`);
-                const data = await response.json();
-                console.log('Received messages:', data);
-                
-                if (data.messages) {
-                    displayMessages(data.messages);
-                    
-                    // Check if admin has joined
-                    if (!adminJoined && data.messages.some(msg => msg.sender_type === 'admin')) {
-                        adminJoined = true;
-                        updateStatus();
-                        console.log('Admin has joined the chat');
-                        // Log admin join
-                        await fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                level: 'info',
-                                message: 'Admin joined the chat',
-                                context: {
-                                    requestId,
-                                    userId
-                                }
-                            })
-                        });
-                    }
-                }
-            } catch (error) {
-                console.error('Error loading messages:', error);
-                // Log error to backend
-                await fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        level: 'error',
-                        message: 'Error loading messages',
-                        context: {
-                            error: error.message,
-                            requestId,
-                            userId
-                        }
-                    })
-                });
-            }
+        
+        function addSystemMessage(text) {
+            const systemDiv = document.createElement('div');
+            systemDiv.className = 'status';
+            systemDiv.textContent = text;
+            messagesContainer.appendChild(systemDiv);
         }
-
-        // Display messages in the chat
-        function displayMessages(messages) {
-            const messagesDiv = document.getElementById('messages');
-            messagesDiv.innerHTML = '';
+        
+        function addMessage(text, isAdmin, timestamp) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isAdmin ? 'admin-message' : 'user-message'}`;
+            messageDiv.textContent = text;
             
-            messages.forEach(msg => {
-                const messageDiv = document.createElement('div');
-                messageDiv.className = `message ${msg.sender_type}-message`;
-                messageDiv.textContent = msg.message;
-                messagesDiv.appendChild(messageDiv);
-            });
+            const timeDiv = document.createElement('div');
+            timeDiv.className = 'message-time';
+            timeDiv.textContent = formatTime(timestamp);
+            messageDiv.appendChild(timeDiv);
             
-            // Scroll to bottom
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            messagesContainer.appendChild(messageDiv);
         }
-
-        // Update status message
-        function updateStatus() {
-            const statusDiv = document.getElementById('status');
-            if (adminJoined) {
-                statusDiv.innerHTML = 'Admin is now in the chat';
-                statusDiv.style.display = 'none';
-            }
+        
+        function formatTime(date) {
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         }
-
-        // Send a new message
+        
+        function scrollToBottom() {
+            window.scrollTo(0, document.body.scrollHeight);
+        }
+        
         async function sendMessage() {
-            const input = document.getElementById('messageInput');
-            const message = input.value.trim();
+            const text = messageInput.value.trim();
+            if (!text) return;
             
-            if (!message) return;
+            // Disable input while sending
+            messageInput.disabled = true;
+            sendButton.disabled = true;
             
             try {
-                // Disable input and button while sending
-                input.disabled = true;
-                if (tg && tg.MainButton) {
-                    tg.MainButton.showProgress();
-                    tg.MainButton.disable();
-                } else {
-                    document.querySelector('.send-button').disabled = true;
-                }
-
-                // Log message sending attempt
-                await fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
+                const response = await fetch(`${API_BASE_URL}/api/requests/${requestId}/messages`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        level: 'info',
-                        message: 'Sending message',
-                        context: {
-                            requestId,
-                            userId,
-                            isAdmin,
-                            messageLength: message.length,
-                            platform: tg ? tg.platform : 'web'
-                        }
-                    })
-                });
-
-                const response = await fetch(`https://supportbot-production-b784.up.railway.app/chat/${requestId}/message`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        sender_id: userId,
-                        sender_type: isAdmin ? 'admin' : 'user',
-                        message: message
+                        sender_id: adminId,
+                        sender_type: 'admin',
+                        message: text
                     })
                 });
                 
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    throw new Error(`Failed to send message: ${response.status} ${response.statusText}`);
                 }
                 
-                // Clear input and re-enable
-                input.value = '';
-                input.disabled = false;
-                input.focus();
+                // Add message to UI
+                addMessage(text, true, new Date());
+                scrollToBottom();
                 
-                // Update button state
-                if (tg && tg.MainButton) {
-                    tg.MainButton.hideProgress();
-                    tg.MainButton.hide();
-                } else {
-                    document.querySelector('.send-button').disabled = false;
-                }
+                // Clear input
+                messageInput.value = '';
                 
-                // Log successful send
-                await fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        level: 'info',
-                        message: 'Message sent successfully',
-                        context: {
-                            requestId,
-                            userId,
-                            isAdmin,
-                            messageLength: message.length,
-                            platform: tg ? tg.platform : 'web'
-                        }
-                    })
-                });
-                
-                // Reload messages immediately
-                await loadMessages();
             } catch (error) {
                 console.error('Error sending message:', error);
-                
-                // Log error
-                await fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        level: 'error',
-                        message: 'Error sending message',
-                        context: {
-                            error: error.message,
-                            requestId,
-                            userId,
-                            isAdmin,
-                            platform: tg ? tg.platform : 'web'
-                        }
-                    })
-                });
-                
-                // Show error in status
-                const statusDiv = document.getElementById('status');
-                statusDiv.innerHTML = 'Error sending message. Please try again.';
-                statusDiv.style.display = 'block';
-                setTimeout(() => {
-                    statusDiv.style.display = 'none';
-                }, 3000);
-                
-                // Re-enable input and button
-                input.disabled = false;
-                if (tg && tg.MainButton) {
-                    tg.MainButton.hideProgress();
-                    if (message) {
-                        tg.MainButton.show();
-                    }
-                } else {
-                    document.querySelector('.send-button').disabled = false;
-                }
+                showError(`Failed to send message: ${error.message}`);
+            } finally {
+                // Re-enable input
+                messageInput.disabled = false;
+                sendButton.disabled = false;
+                messageInput.focus();
             }
         }
-
-        // Handle enter key in input
-        document.getElementById('messageInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
+        
+        async function pollForNewMessages() {
+            if (!lastMessageTimestamp) return;
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/chat/${requestId}`);
+                if (!response.ok) return;
+                
+                const data = await response.json();
+                
+                // Check for status changes
+                requestStatus.textContent = `Status: ${data.status}`;
+                
+                // Filter new messages
+                const newMessages = data.messages.filter(msg => {
+                    const msgTime = new Date(msg.timestamp);
+                    return msgTime > lastMessageTimestamp;
+                });
+                
+                // Add new messages
+                if (newMessages.length > 0) {
+                    newMessages.forEach(msg => {
+                        const isAdmin = msg.sender_type === 'admin';
+                        addMessage(msg.message, isAdmin, new Date(msg.timestamp));
+                    });
+                    
+                    // Update last message timestamp
+                    lastMessageTimestamp = new Date(data.messages[data.messages.length - 1].timestamp);
+                    scrollToBottom();
+                }
+            } catch (error) {
+                console.error('Error polling for messages:', error);
+            }
+        }
+        
+        function startPolling() {
+            pollingInterval = setInterval(pollForNewMessages, 5000);
+        }
+        
+        function stopPolling() {
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+                pollingInterval = null;
+            }
+        }
+        
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+        }
+        
+        function hideError() {
+            errorMessage.style.display = 'none';
+        }
+        
+        function hideLoading() {
+            loadingOverlay.style.display = 'none';
+        }
+        
+        // Event listeners
+        sendButton.addEventListener('click', sendMessage);
+        
+        messageInput.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
                 sendMessage();
             }
         });
-
-        // Update theme colors
-        function updateTheme() {
-            if (tg && tg.themeParams) {
-                document.documentElement.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color);
-                document.documentElement.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color);
-                document.documentElement.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color);
-                document.documentElement.style.setProperty('--tg-theme-button-text-color', tg.themeParams.button_text_color);
-                document.documentElement.style.setProperty('--tg-theme-hint-color', tg.themeParams.hint_color);
-                document.documentElement.style.setProperty('--tg-theme-link-color', tg.themeParams.link_color);
-                document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', tg.themeParams.secondary_bg_color);
-                
-                // Update chat-specific theme elements
-                const chatContainer = document.getElementById('chat-container');
-                const messageInput = document.getElementById('message-input');
-                const sendButton = document.getElementById('send-button');
-                
-                if (chatContainer) {
-                    chatContainer.style.backgroundColor = tg.themeParams.bg_color;
-                    chatContainer.style.color = tg.themeParams.text_color;
-                }
-                
-                if (messageInput) {
-                    messageInput.style.backgroundColor = tg.themeParams.secondary_bg_color;
-                    messageInput.style.color = tg.themeParams.text_color;
-                    messageInput.style.borderColor = tg.themeParams.hint_color;
-                }
-                
-                if (sendButton) {
-                    sendButton.style.backgroundColor = tg.themeParams.button_color;
-                    sendButton.style.color = tg.themeParams.button_text_color;
-                }
+        
+        // Auto-resize textarea
+        messageInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+        });
+        
+        // Handle WebApp back button
+        tg.BackButton.onClick(() => {
+            stopPolling();
+            tg.close();
+        });
+        
+        // Handle page visibility changes
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'hidden') {
+                stopPolling();
+            } else {
+                startPolling();
             }
-        }
-
-        // Initialize when the page loads
-        window.addEventListener('load', initChat);
+        });
+        
+        // Initialize
+        loadChatHistory();
     </script>
 </body>
 </html>

@@ -79,7 +79,7 @@
             border-radius: 8px;
             font-size: 16px;
             cursor: pointer;
-            display: none;
+            display: block;
             -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
             position: relative;
@@ -258,7 +258,7 @@
                 });
 
                 // Send request to backend
-                const response = await fetch('https://supportbot-production-b784.up.railway.app/support-request', {
+                const response = await fetch('http://localhost:8000/support-request', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -317,7 +317,7 @@
          * Logs button state changes to the backend
          */
         function logButtonState(state, issueLength = null) {
-            fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
+            fetch('http://localhost:8000/webapp-log', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -337,7 +337,7 @@
          * Logs WebApp events to the backend
          */
         function logWebAppEvent(message, context = {}) {
-            fetch('https://supportbot-production-b784.up.railway.app/webapp-log', {
+            fetch('http://localhost:8000/webapp-log', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -403,6 +403,111 @@
                 document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', tg.themeParams.secondary_bg_color);
             }
         }
+
+        // After setting up the Telegram WebApp
+        document.addEventListener('DOMContentLoaded', function() {
+            // For debugging outside of Telegram
+            if (!window.Telegram || !window.Telegram.WebApp) {
+                console.log("Running outside Telegram WebApp, using mock data");
+                window.Telegram = {
+                    WebApp: {
+                        initData: "mock_init_data",
+                        initDataUnsafe: {
+                            user: {
+                                id: 12345678,
+                                first_name: "Test"
+                            }
+                        },
+                        ready: function() {},
+                        MainButton: {
+                            setText: function(text) { console.log('MainButton setText:', text); },
+                            show: function() { console.log('MainButton show'); },
+                            hide: function() { console.log('MainButton hide'); },
+                            enable: function() { console.log('MainButton enable'); },
+                            disable: function() { console.log('MainButton disable'); },
+                            onClick: function(callback) { 
+                                console.log('MainButton onClick registered');
+                                document.querySelector('.submit-button').addEventListener('click', callback);
+                            }
+                        }
+                    }
+                };
+            }
+        });
+
+        // Update form submission with better error handling
+        const issueTextarea = document.getElementById('issue');
+        const submitButton = document.querySelector('.submit-button');
+
+        submitButton.addEventListener('click', async function() {
+            try {
+                console.log("Submit button clicked");
+                const issue = issueTextarea.value.trim();
+                
+                if (!issue) {
+                    console.error("Issue text is empty");
+                    document.querySelector('.error').textContent = 'Please describe your issue.';
+                    document.querySelector('.error').style.display = 'block';
+                    return;
+                }
+                
+                console.log("Preparing to send request with issue:", issue);
+                
+                // Get user info or use fallback
+                const userId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id || 12345678;
+                const platform = detectPlatform();
+                const isWebApp = !!window.Telegram?.WebApp;
+                
+                console.log("Request data:", {
+                    user_id: userId,
+                    issue: issue,
+                    platform: platform,
+                    isWebApp: isWebApp
+                });
+                
+                try {
+                    // Send request to backend
+                    console.log("Sending request to backend...");
+                    const response = await fetch('http://localhost:8000/support-request', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            user_id: userId,
+                            issue: issue,
+                            platform: platform,
+                            isWebApp: isWebApp
+                        })
+                    });
+                    
+                    console.log("Received response:", response);
+                    
+                    if (!response.ok) {
+                        throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+                    }
+                    
+                    const data = await response.json();
+                    console.log("Response data:", data);
+                    
+                    // Success message
+                    document.querySelector('.container').innerHTML = `
+                        <div class="success-message">
+                            <h2>Request Submitted!</h2>
+                            <p>Your support request has been successfully submitted.</p>
+                            <p>Request ID: ${data.request_id}</p>
+                        </div>
+                    `;
+                    
+                } catch (error) {
+                    console.error("API request error:", error);
+                    document.querySelector('.error').textContent = `Error submitting request: ${error.message}`;
+                    document.querySelector('.error').style.display = 'block';
+                }
+            } catch (error) {
+                console.error("General error:", error);
+                document.querySelector('.error').textContent = `Unexpected error: ${error.message}`;
+                document.querySelector('.error').style.display = 'block';
+            }
+        });
     </script>
 </body>
 </html>
