@@ -48,8 +48,8 @@
             padding: 10px;
             border-radius: 10px;
             max-width: 80%;
-            word-wrap: break-word;
             position: relative;
+            word-wrap: break-word;
             animation: fadeIn 0.3s ease-in-out;
         }
 
@@ -59,17 +59,24 @@
         }
 
         .user-message {
-            background-color: var(--tg-theme-button-color, #2481cc);
-            color: var(--tg-theme-button-text-color, #ffffff);
-            margin-left: auto;
-            border-bottom-right-radius: 2px;
+            background-color: #e6f3ff;
+            align-self: flex-start;
+            margin-right: auto;
+            color: #000;
         }
 
         .admin-message {
-            background-color: var(--tg-theme-secondary-bg-color, #f0f0f0);
-            color: var(--tg-theme-text-color, #000000);
+            background-color: #f1f1f1;
+            align-self: flex-start;
             margin-right: auto;
-            border-bottom-left-radius: 2px;
+            color: #333;
+        }
+        
+        .my-message {
+            background-color: var(--tg-theme-button-color, #2481cc);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            align-self: flex-end;
+            margin-left: auto;
         }
 
         .message-time {
@@ -220,15 +227,41 @@
         
         // Get parameters from URL
         const urlParams = new URLSearchParams(window.location.search);
-        const requestId = urlParams.get('requestId');
-        const adminId = urlParams.get('adminId');
+        const adminIdFromQuery = urlParams.get('adminId');
+        
+        // Extract requestId from URL path or query parameter for backward compatibility
+        let requestId;
+        const pathMatch = window.location.pathname.match(/\/chat\/(\d+)/);
+        if (pathMatch && pathMatch[1]) {
+            requestId = pathMatch[1];
+        } else {
+            requestId = urlParams.get('requestId');
+        }
+        
+        // Get user information from Telegram WebApp
+        let currentUserId = 0;
+        let isAdmin = false;
+        
+        try {
+            // Extract user ID from Telegram WebApp if available
+            if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                currentUserId = tg.initDataUnsafe.user.id;
+                console.log("Current user ID from Telegram:", currentUserId);
+            }
+        } catch (error) {
+            console.error("Error getting Telegram user info:", error);
+        }
+        
+        // Admin ID can be from query parameter or from the Telegram WebApp
+        const adminId = adminIdFromQuery || currentUserId;
         
         // API endpoints - dynamically set based on environment
         const isLocalDev = window.location.hostname === 'localhost';
-        const API_BASE_URL = isLocalDev ? 'http://localhost:8000' : 'https://supportbot-production-b784.up.railway.app';
+        const API_BASE_URL = isLocalDev ? 'http://localhost:8000' : window.location.origin;
         
         let lastMessageTimestamp = null;
         let pollingInterval = null;
+        let supportRequest = null; // To store the full request data
         
         // Check if we have required parameters
         if (!requestId) {
@@ -246,10 +279,15 @@
                 }
                 
                 const data = await response.json();
+                supportRequest = data; // Store the full request data
                 
                 // Update chat header
                 requestTitle.textContent = `Support Request #${data.request_id}`;
                 requestStatus.textContent = `Status: ${data.status}`;
+                
+                // Determine if current user is admin or the requester
+                isAdmin = currentUserId && currentUserId !== data.user_id;
+                console.log("User type:", isAdmin ? "Admin" : "Requester", "Current ID:", currentUserId, "Request user ID:", data.user_id);
                 
                 // Clear existing messages
                 messagesContainer.innerHTML = '';
@@ -259,9 +297,9 @@
                 
                 // Add all messages
                 data.messages.forEach(msg => {
-                    const isAdmin = msg.sender_type === 'admin';
-                    const sender = isAdmin ? 'Admin' : 'User';
-                    addMessage(msg.message, isAdmin, new Date(msg.timestamp));
+                    const msgIsFromAdmin = msg.sender_type === 'admin';
+                    const isMine = isAdmin ? msgIsFromAdmin : !msgIsFromAdmin;
+                    addMessage(msg.message, msgIsFromAdmin, new Date(msg.timestamp), isMine);
                 });
                 
                 // Update last message timestamp
@@ -289,9 +327,16 @@
             messagesContainer.appendChild(systemDiv);
         }
         
-        function addMessage(text, isAdmin, timestamp) {
+        function addMessage(text, isFromAdmin, timestamp, isMine) {
             const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${isAdmin ? 'admin-message' : 'user-message'}`;
+            
+            // Update class based on whether the message is mine or not
+            if (isMine) {
+                messageDiv.className = 'message my-message';
+            } else {
+                messageDiv.className = `message ${isFromAdmin ? 'admin-message' : 'user-message'}`;
+            }
+            
             messageDiv.textContent = text;
             
             const timeDiv = document.createElement('div');
@@ -319,12 +364,15 @@
             sendButton.disabled = true;
             
             try {
+                // Determine sender type based on user role
+                const senderType = isAdmin ? 'admin' : 'user';
+                
                 const response = await fetch(`${API_BASE_URL}/api/requests/${requestId}/messages`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        sender_id: adminId,
-                        sender_type: 'admin',
+                        sender_id: currentUserId,
+                        sender_type: senderType,
                         message: text
                     })
                 });
@@ -334,7 +382,7 @@
                 }
                 
                 // Add message to UI
-                addMessage(text, true, new Date());
+                addMessage(text, isAdmin, new Date(), true);
                 scrollToBottom();
                 
                 // Clear input
@@ -351,42 +399,41 @@
             }
         }
         
-        async function pollForNewMessages() {
-            if (!lastMessageTimestamp) return;
-            
+        async function pollNewMessages() {
             try {
-                const response = await fetch(`${API_BASE_URL}/api/chat/${requestId}`);
-                if (!response.ok) return;
+                const since = lastMessageTimestamp ? lastMessageTimestamp.toISOString() : null;
+                const url = since 
+                    ? `${API_BASE_URL}/api/chat/${requestId}/messages?since=${encodeURIComponent(since)}`
+                    : `${API_BASE_URL}/api/chat/${requestId}/messages`;
                 
-                const data = await response.json();
+                const response = await fetch(url);
                 
-                // Check for status changes
-                requestStatus.textContent = `Status: ${data.status}`;
+                if (!response.ok) {
+                    throw new Error(`Failed to poll messages: ${response.status} ${response.statusText}`);
+                }
                 
-                // Filter new messages
-                const newMessages = data.messages.filter(msg => {
-                    const msgTime = new Date(msg.timestamp);
-                    return msgTime > lastMessageTimestamp;
-                });
+                const newMessages = await response.json();
                 
-                // Add new messages
-                if (newMessages.length > 0) {
+                if (newMessages && newMessages.length > 0) {
+                    // Update lastMessageTimestamp
+                    lastMessageTimestamp = new Date(newMessages[newMessages.length - 1].timestamp);
+                    
+                    // Add new messages to UI
                     newMessages.forEach(msg => {
-                        const isAdmin = msg.sender_type === 'admin';
-                        addMessage(msg.message, isAdmin, new Date(msg.timestamp));
+                        const msgIsFromAdmin = msg.sender_type === 'admin';
+                        const isMine = isAdmin ? msgIsFromAdmin : !msgIsFromAdmin;
+                        addMessage(msg.message, msgIsFromAdmin, new Date(msg.timestamp), isMine);
                     });
                     
-                    // Update last message timestamp
-                    lastMessageTimestamp = new Date(data.messages[data.messages.length - 1].timestamp);
                     scrollToBottom();
                 }
             } catch (error) {
-                console.error('Error polling for messages:', error);
+                console.error('Error polling messages:', error);
             }
         }
         
         function startPolling() {
-            pollingInterval = setInterval(pollForNewMessages, 5000);
+            pollingInterval = setInterval(pollNewMessages, 5000);
         }
         
         function stopPolling() {

@@ -112,6 +112,196 @@
         @keyframes spin {
             to { transform: translate(-50%, -50%) rotate(360deg); }
         }
+
+        /* Success message styling */
+        .success-message {
+            text-align: center;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .success-message h2 {
+            color: var(--tg-theme-button-color, #2481cc);
+            margin-bottom: 15px;
+        }
+
+        /* Loading spinner */
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top-color: var(--tg-theme-button-color, #2481cc);
+            animation: spinner 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spinner {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Error message styling */
+        .error-message {
+            text-align: center;
+            padding: 20px;
+            margin-top: 20px;
+            color: var(--tg-theme-destructive-text-color, #ff4444);
+        }
+
+        .error-message button {
+            margin-top: 15px;
+            padding: 10px 20px;
+            background-color: var(--tg-theme-button-color, #2481cc);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        /* Chat interface styling */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            padding-bottom: 70px;
+        }
+
+        .chat-header {
+            background-color: var(--tg-theme-secondary-bg-color, #f1f1f1);
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .chat-header h2 {
+            margin: 0;
+            font-size: 18px;
+            color: var(--tg-theme-text-color, #000000);
+        }
+
+        #requestStatus {
+            font-size: 14px;
+            color: var(--tg-theme-hint-color, #999999);
+            margin-top: 5px;
+        }
+
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            padding: 10px 0;
+        }
+
+        .message {
+            margin: 8px 0;
+            padding: 10px;
+            border-radius: 10px;
+            max-width: 80%;
+            position: relative;
+            word-wrap: break-word;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .user-message {
+            background-color: #e6f3ff;
+            align-self: flex-start;
+            margin-right: auto;
+            color: #000;
+        }
+
+        .admin-message {
+            background-color: #f1f1f1;
+            align-self: flex-start;
+            margin-right: auto;
+            color: #333;
+        }
+        
+        .my-message {
+            background-color: var(--tg-theme-button-color, #2481cc);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            align-self: flex-end;
+            margin-left: auto;
+        }
+
+        .message-time {
+            font-size: 11px;
+            opacity: 0.7;
+            margin-top: 5px;
+            text-align: right;
+        }
+
+        .status {
+            text-align: center;
+            padding: 8px;
+            margin: 10px 0;
+            background-color: var(--tg-theme-secondary-bg-color, #f1f1f1);
+            border-radius: 8px;
+            font-size: 14px;
+            color: var(--tg-theme-hint-color, #999999);
+        }
+
+        .status.error {
+            background-color: rgba(255, 0, 0, 0.1);
+            color: #ff4444;
+        }
+
+        .chat-input {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: var(--tg-theme-bg-color, #ffffff);
+            padding: 10px;
+            display: flex;
+            border-top: 1px solid var(--tg-theme-secondary-bg-color, #f1f1f1);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        #messageInput {
+            flex: 1;
+            border: 1px solid var(--tg-theme-secondary-bg-color, #f1f1f1);
+            border-radius: 20px;
+            padding: 10px 15px;
+            margin-right: 10px;
+            resize: none;
+            min-height: 40px;
+            max-height: 100px;
+            background-color: var(--tg-theme-secondary-bg-color, #f1f1f1);
+            color: var(--tg-theme-text-color, #000000);
+        }
+
+        #sendButton {
+            background-color: var(--tg-theme-button-color, #2481cc);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        #sendButton:before {
+            content: "→";
+            font-size: 20px;
+        }
+
+        #sendButton:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
@@ -119,8 +309,8 @@
     <div class="container">
         <h1>Submit a Support Request</h1>
         <textarea id="issue" placeholder="Describe your issue..."></textarea>
-        <!-- Fallback button for web browsers -->
-        <button id="submitButton" class="submit-button" onclick="handleSubmit()">Submit Request</button>
+        <!-- Fallback button for web browsers - hidden by default -->
+        <button id="submitButton" class="submit-button" onclick="handleSubmit()" style="display: none;">Submit Request</button>
         <div id="error" class="error"></div>
     </div>
 
@@ -130,6 +320,14 @@
         let mainButton = null;
         let isWebApp = false;
         let platform = 'unknown';
+        let currentView = 'form'; // Tracks current view: 'form' or 'chat'
+        let currentRequestId = null; // Stores the active request ID when in chat view
+        let pollingInterval = null; // For chat message polling
+        
+        // Base API URL - used for all API requests
+        const API_BASE_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:8000' 
+            : window.location.origin;
 
         /**
          * Detects the platform and initializes platform-specific settings
@@ -175,6 +373,9 @@
                     // Initialize button with platform-specific text
                     const buttonText = platform === 'ios' ? 'Send' : 'Submit Request';
                     mainButton.setText(buttonText);
+                    
+                    // Make sure the web button is hidden
+                    document.getElementById('submitButton').style.display = 'none';
                     
                     // Set up input event listener for dynamic button visibility
                     const issueInput = document.getElementById('issue');
@@ -258,7 +459,7 @@
                 });
 
                 // Send request to backend
-                const response = await fetch('http://localhost:8000/support-request', {
+                const response = await fetch(`${API_BASE_URL}/support-request`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -269,28 +470,48 @@
                     })
                 });
 
-                const data = await response.json();
+                // Parse response as text first to avoid potential JSON parsing errors
+                const responseText = await response.text();
+                let data;
+                
+                try {
+                    // Try to parse as JSON
+                    data = JSON.parse(responseText);
+                } catch (e) {
+                    console.error("Failed to parse response as JSON:", e);
+                    // If it's not JSON, create a minimal object
+                    data = { status: "created", request_id: null };
+                }
                 
                 if (!response.ok) {
                     throw new Error(data.message || `HTTP error! status: ${response.status}`);
                 }
                 
+                // Extract request ID from response
+                const requestId = data.request_id;
+                
+                if (!requestId) {
+                    throw new Error("No request ID returned from server");
+                }
+                
                 // Log successful submission
                 logWebAppEvent('Support request submitted successfully', { 
-                    requestId: data.request_id,
+                    requestId: requestId,
                     platform: platform
                 });
 
-                // Redirect to chat if URL is provided
-                if (data.chat_url) {
-                    logWebAppEvent('Redirecting to chat', { 
-                        chatUrl: data.chat_url,
-                        platform: platform
-                    });
-                    window.location.href = data.chat_url;
-                } else {
-                    throw new Error('No chat URL provided in response');
-                }
+                // Show brief success message
+                document.querySelector('.container').innerHTML = `
+                    <div class="success-message">
+                        <h2>Request Submitted!</h2>
+                        <p>Loading chat interface...</p>
+                        <div class="loading-spinner"></div>
+                    </div>
+                `;
+                
+                // Switch to chat view
+                switchToChatView(requestId);
+                
             } catch (error) {
                 // Handle submission error
                 logWebAppEvent('Failed to submit support request', { 
@@ -314,10 +535,382 @@
         }
 
         /**
+         * Switches the view to the chat interface
+         * This is a SPA approach that avoids redirects
+         */
+        async function switchToChatView(requestId) {
+            try {
+                currentView = 'chat';
+                currentRequestId = requestId;
+                
+                // If using Telegram MainButton, update it for chat
+                if (mainButton) {
+                    mainButton.setText('Send');
+                    mainButton.hide(); // Hide until there's text to send
+                }
+                
+                // Create a basic chat structure first with loading indicator
+                document.querySelector('.container').innerHTML = `
+                    <div class="chat-container">
+                        <div class="chat-header">
+                            <h2 id="requestTitle">Support Request #${requestId}</h2>
+                            <div id="requestStatus">Status: Loading...</div>
+                        </div>
+                        <div id="messagesContainer" class="messages-container">
+                            <div class="loading-spinner"></div>
+                        </div>
+                        <div class="chat-input">
+                            <textarea id="messageInput" placeholder="Type your message..." disabled></textarea>
+                            <button id="sendButton" disabled>Send</button>
+                        </div>
+                    </div>
+                `;
+                
+                // Try to fetch chat data
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/chat/${requestId}`);
+                    
+                    if (!response.ok) {
+                        // If the API fails, create a fallback chat with just the initial message
+                        const fallbackChat = {
+                            request_id: requestId,
+                            user_id: tg.initDataUnsafe.user.id,
+                            status: "pending",
+                            created_at: new Date().toISOString(),
+                            updated_at: new Date().toISOString(),
+                            issue: document.getElementById('issue')?.value || "Support request",
+                            solution: null,
+                            messages: [{
+                                id: 1,
+                                request_id: requestId,
+                                sender_id: tg.initDataUnsafe.user.id,
+                                sender_type: "user",
+                                message: document.getElementById('issue')?.value || "Support request",
+                                timestamp: new Date().toISOString()
+                            }]
+                        };
+                        
+                        // Update the chat interface with fallback data
+                        document.getElementById('requestStatus').textContent = `Status: ${fallbackChat.status}`;
+                        document.getElementById('messagesContainer').innerHTML = `
+                            <div class="status">Issue: ${fallbackChat.issue}</div>
+                            ${fallbackChat.messages.map(msg => createMessageHTML(msg)).join('')}
+                            <div class="status">
+                                Note: We're experiencing some technical difficulties. 
+                                Your request has been submitted and our team will respond shortly.
+                            </div>
+                        `;
+                        
+                        // Log the error but continue with fallback
+                        console.error(`API error: ${response.status}. Using fallback chat interface.`);
+                        logWebAppEvent('Using fallback chat interface', { 
+                            requestId, 
+                            error: `API error: ${response.status}`
+                        });
+                    } else {
+                        // If API succeeds, use the real data
+                        const chatData = await response.json();
+                        
+                        // Update the chat interface with real data
+                        document.getElementById('requestStatus').textContent = `Status: ${chatData.status}`;
+                        document.getElementById('messagesContainer').innerHTML = `
+                            <div class="status">Issue: ${chatData.issue}</div>
+                            ${chatData.messages.map(msg => createMessageHTML(msg)).join('')}
+                        `;
+                    }
+                    
+                    // Enable the input regardless of API success
+                    document.getElementById('messageInput').disabled = false;
+                    document.getElementById('sendButton').disabled = false;
+                    
+                    // Set up chat handlers
+                    setupChatHandlers(requestId);
+                    
+                    // Start polling for new messages
+                    startPolling(requestId);
+                    
+                    // Log view change
+                    logWebAppEvent('Switched to chat view', { requestId });
+                    
+                } catch (error) {
+                    // Handle complete failure
+                    console.error('Error loading chat:', error);
+                    document.getElementById('messagesContainer').innerHTML = `
+                        <div class="error-message">
+                            <h2>Error Loading Chat</h2>
+                            <p>${error.message}</p>
+                            <p>Your request has been submitted. Please try again later.</p>
+                            <button onclick="window.location.reload()">Try Again</button>
+                        </div>
+                    `;
+                }
+                
+            } catch (error) {
+                // Handle catastrophic failure
+                console.error('Fatal error in chat view:', error);
+                document.querySelector('.container').innerHTML = `
+                    <div class="error-message">
+                        <h2>Error Loading Chat</h2>
+                        <p>${error.message}</p>
+                        <button onclick="window.location.reload()">Try Again</button>
+                    </div>
+                `;
+            }
+        }
+        
+        /**
+         * Creates the HTML for the chat interface
+         */
+        function createChatHTML(chatData) {
+            return `
+                <div class="chat-container">
+                    <div class="chat-header">
+                        <h2 id="requestTitle">Support Request #${chatData.request_id}</h2>
+                        <div id="requestStatus">Status: ${chatData.status}</div>
+                    </div>
+                    <div id="messagesContainer" class="messages-container">
+                        <div class="status">Issue: ${chatData.issue}</div>
+                        ${chatData.messages.map(msg => createMessageHTML(msg)).join('')}
+                    </div>
+                    <div class="chat-input">
+                        <textarea id="messageInput" placeholder="Type your message..."></textarea>
+                        <button id="sendButton">Send</button>
+                    </div>
+                </div>
+            `;
+        }
+        
+        /**
+         * Creates HTML for a single message
+         */
+        function createMessageHTML(msg) {
+            const isAdmin = msg.sender_type === 'admin';
+            const isMine = isAdmin ? false : true; // User's messages are "mine" in this context
+            const className = isMine ? 'message my-message' : 'message admin-message';
+            const timestamp = new Date(msg.timestamp);
+            const timeStr = timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            return `
+                <div class="${className}">
+                    ${msg.message}
+                    <div class="message-time">${timeStr}</div>
+                </div>
+            `;
+        }
+        
+        /**
+         * Sets up event handlers for the chat interface
+         */
+        function setupChatHandlers(requestId) {
+            const messageInput = document.getElementById('messageInput');
+            const sendButton = document.getElementById('sendButton');
+            
+            // Handle send button click
+            sendButton.addEventListener('click', () => sendChatMessage(requestId));
+            
+            // Handle Enter key in textarea
+            messageInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendChatMessage(requestId);
+                }
+            });
+            
+            // Handle input for MainButton visibility
+            messageInput.addEventListener('input', function() {
+                // Auto-resize textarea
+                this.style.height = 'auto';
+                this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+                
+                // Show/hide MainButton based on content
+                if (mainButton) {
+                    if (this.value.trim()) {
+                        mainButton.show();
+                        mainButton.onClick(() => sendChatMessage(requestId));
+                    } else {
+                        mainButton.hide();
+                    }
+                }
+            });
+            
+            // Scroll to bottom of messages
+            scrollToBottom();
+        }
+        
+        /**
+         * Sends a chat message
+         */
+        async function sendChatMessage(requestId) {
+            const messageInput = document.getElementById('messageInput');
+            const text = messageInput.value.trim();
+            
+            if (!text) return;
+            
+            // Disable input while sending
+            messageInput.disabled = true;
+            document.getElementById('sendButton').disabled = true;
+            if (mainButton) mainButton.hide();
+            
+            try {
+                // Get current user ID from Telegram WebApp
+                const userId = tg.initDataUnsafe.user.id;
+                
+                // Send message to API - Fix the API endpoint URL
+                const response = await fetch(`${API_BASE_URL}/api/chat/${requestId}/messages`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        sender_id: userId,
+                        sender_type: 'user', // Always 'user' in this context
+                        message: text
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to send message: ${response.status}`);
+                }
+                
+                // Add message to UI
+                const messagesContainer = document.getElementById('messagesContainer');
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message my-message';
+                messageDiv.textContent = text;
+                
+                const timeDiv = document.createElement('div');
+                timeDiv.className = 'message-time';
+                timeDiv.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                messageDiv.appendChild(timeDiv);
+                
+                messagesContainer.appendChild(messageDiv);
+                
+                // Clear input and reset height
+                messageInput.value = '';
+                messageInput.style.height = 'auto';
+                
+                // Scroll to bottom
+                scrollToBottom();
+                
+                // Log message sent
+                logWebAppEvent('Message sent', { requestId });
+                
+            } catch (error) {
+                console.error('Error sending message:', error);
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'status error';
+                errorDiv.textContent = `Error sending message: ${error.message}`;
+                document.getElementById('messagesContainer').appendChild(errorDiv);
+            } finally {
+                // Re-enable input
+                messageInput.disabled = false;
+                document.getElementById('sendButton').disabled = false;
+                messageInput.focus();
+            }
+        }
+        
+        /**
+         * Starts polling for new messages
+         */
+        function startPolling(requestId) {
+            // Clear any existing polling
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+            }
+            
+            // Set last message timestamp
+            let lastMessageTimestamp = new Date();
+            
+            // Poll for new messages every 3 seconds
+            pollingInterval = setInterval(async () => {
+                try {
+                    // Only poll if we're still in chat view
+                    if (currentView !== 'chat') {
+                        clearInterval(pollingInterval);
+                        return;
+                    }
+                    
+                    const since = lastMessageTimestamp.toISOString();
+                    const response = await fetch(
+                        `${API_BASE_URL}/api/chat/${requestId}/messages?since=${encodeURIComponent(since)}`
+                    );
+                    
+                    if (!response.ok) {
+                        throw new Error(`Failed to poll messages: ${response.status}`);
+                    }
+                    
+                    const newMessages = await response.json();
+                    
+                    if (newMessages && newMessages.length > 0) {
+                        // Update lastMessageTimestamp
+                        lastMessageTimestamp = new Date(newMessages[newMessages.length - 1].timestamp);
+                        
+                        // Add new messages to UI
+                        const messagesContainer = document.getElementById('messagesContainer');
+                        
+                        newMessages.forEach(msg => {
+                            const isAdmin = msg.sender_type === 'admin';
+                            const messageDiv = document.createElement('div');
+                            messageDiv.className = isAdmin ? 'message admin-message' : 'message my-message';
+                            messageDiv.textContent = msg.message;
+                            
+                            const timeDiv = document.createElement('div');
+                            timeDiv.className = 'message-time';
+                            timeDiv.textContent = new Date(msg.timestamp).toLocaleTimeString([], { 
+                                hour: '2-digit', 
+                                minute: '2-digit' 
+                            });
+                            messageDiv.appendChild(timeDiv);
+                            
+                            messagesContainer.appendChild(messageDiv);
+                        });
+                        
+                        // Scroll to bottom
+                        scrollToBottom();
+                    }
+                    
+                } catch (error) {
+                    console.error('Error polling messages:', error);
+                }
+            }, 3000);
+        }
+        
+        /**
+         * Scrolls the chat to the bottom
+         */
+        function scrollToBottom() {
+            window.scrollTo(0, document.body.scrollHeight);
+        }
+
+        /**
+         * Updates the theme based on Telegram WebApp settings
+         */
+        function updateTheme() {
+            if (!tg || !tg.themeParams) return;
+            
+            document.documentElement.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color || '#ffffff');
+            document.documentElement.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color || '#000000');
+            document.documentElement.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color || '#2481cc');
+            document.documentElement.style.setProperty('--tg-theme-button-text-color', tg.themeParams.button_text_color || '#ffffff');
+            document.documentElement.style.setProperty('--tg-theme-hint-color', tg.themeParams.hint_color || '#999999');
+            document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', tg.themeParams.secondary_bg_color || '#f1f1f1');
+        }
+
+        /**
+         * Shows an error message
+         */
+        function showError(message) {
+            const errorElement = document.getElementById('error');
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+            setTimeout(() => {
+                errorElement.style.display = 'none';
+            }, 5000);
+        }
+
+        /**
          * Logs button state changes to the backend
          */
         function logButtonState(state, issueLength = null) {
-            fetch('http://localhost:8000/webapp-log', {
+            fetch(`${API_BASE_URL}/webapp-log`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -337,7 +930,7 @@
          * Logs WebApp events to the backend
          */
         function logWebAppEvent(message, context = {}) {
-            fetch('http://localhost:8000/webapp-log', {
+            fetch(`${API_BASE_URL}/webapp-log`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -352,8 +945,8 @@
             });
         }
 
-        // Initialize WebApp when page loads
-        window.addEventListener('load', initWebApp);
+        // Initialize WebApp when document is ready
+        document.addEventListener('DOMContentLoaded', initWebApp);
 
         // Set up platform-specific event handlers
         if (isWebApp) {
@@ -378,136 +971,6 @@
                 tg.close();
             });
         }
-
-        // Error handling functions
-        function showError(message) {
-            const errorDiv = document.getElementById('error');
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
-            
-            // Auto-hide error after 5 seconds
-            setTimeout(() => {
-                errorDiv.style.display = 'none';
-            }, 5000);
-        }
-
-        // Update theme colors
-        function updateTheme() {
-            if (tg && tg.themeParams) {
-                document.documentElement.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color);
-                document.documentElement.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color);
-                document.documentElement.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color);
-                document.documentElement.style.setProperty('--tg-theme-button-text-color', tg.themeParams.button_text_color);
-                document.documentElement.style.setProperty('--tg-theme-hint-color', tg.themeParams.hint_color);
-                document.documentElement.style.setProperty('--tg-theme-link-color', tg.themeParams.link_color);
-                document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', tg.themeParams.secondary_bg_color);
-            }
-        }
-
-        // After setting up the Telegram WebApp
-        document.addEventListener('DOMContentLoaded', function() {
-            // For debugging outside of Telegram
-            if (!window.Telegram || !window.Telegram.WebApp) {
-                console.log("Running outside Telegram WebApp, using mock data");
-                window.Telegram = {
-                    WebApp: {
-                        initData: "mock_init_data",
-                        initDataUnsafe: {
-                            user: {
-                                id: 12345678,
-                                first_name: "Test"
-                            }
-                        },
-                        ready: function() {},
-                        MainButton: {
-                            setText: function(text) { console.log('MainButton setText:', text); },
-                            show: function() { console.log('MainButton show'); },
-                            hide: function() { console.log('MainButton hide'); },
-                            enable: function() { console.log('MainButton enable'); },
-                            disable: function() { console.log('MainButton disable'); },
-                            onClick: function(callback) { 
-                                console.log('MainButton onClick registered');
-                                document.querySelector('.submit-button').addEventListener('click', callback);
-                            }
-                        }
-                    }
-                };
-            }
-        });
-
-        // Update form submission with better error handling
-        const issueTextarea = document.getElementById('issue');
-        const submitButton = document.querySelector('.submit-button');
-
-        submitButton.addEventListener('click', async function() {
-            try {
-                console.log("Submit button clicked");
-                const issue = issueTextarea.value.trim();
-                
-                if (!issue) {
-                    console.error("Issue text is empty");
-                    document.querySelector('.error').textContent = 'Please describe your issue.';
-                    document.querySelector('.error').style.display = 'block';
-                    return;
-                }
-                
-                console.log("Preparing to send request with issue:", issue);
-                
-                // Get user info or use fallback
-                const userId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id || 12345678;
-                const platform = detectPlatform();
-                const isWebApp = !!window.Telegram?.WebApp;
-                
-                console.log("Request data:", {
-                    user_id: userId,
-                    issue: issue,
-                    platform: platform,
-                    isWebApp: isWebApp
-                });
-                
-                try {
-                    // Send request to backend
-                    console.log("Sending request to backend...");
-                    const response = await fetch('http://localhost:8000/support-request', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            user_id: userId,
-                            issue: issue,
-                            platform: platform,
-                            isWebApp: isWebApp
-                        })
-                    });
-                    
-                    console.log("Received response:", response);
-                    
-                    if (!response.ok) {
-                        throw new Error(`Server returned ${response.status}: ${response.statusText}`);
-                    }
-                    
-                    const data = await response.json();
-                    console.log("Response data:", data);
-                    
-                    // Success message
-                    document.querySelector('.container').innerHTML = `
-                        <div class="success-message">
-                            <h2>Request Submitted!</h2>
-                            <p>Your support request has been successfully submitted.</p>
-                            <p>Request ID: ${data.request_id}</p>
-                        </div>
-                    `;
-                    
-                } catch (error) {
-                    console.error("API request error:", error);
-                    document.querySelector('.error').textContent = `Error submitting request: ${error.message}`;
-                    document.querySelector('.error').style.display = 'block';
-                }
-            } catch (error) {
-                console.error("General error:", error);
-                document.querySelector('.error').textContent = `Unexpected error: ${error.message}`;
-                document.querySelector('.error').style.display = 'block';
-            }
-        });
     </script>
 </body>
 </html>
