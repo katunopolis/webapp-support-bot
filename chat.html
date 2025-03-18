@@ -270,15 +270,52 @@
             return;
         }
         
-        async function loadChatHistory() {
+        async function loadChatHistory(requestId) {
             try {
-                const response = await fetch(`${API_BASE_URL}/api/chat/${requestId}`);
+                const endpoints = [
+                    `${API_BASE_URL}/api/chat_api/${requestId}`,
+                    `${API_BASE_URL}/api/support/chat/${requestId}`,
+                    `${API_BASE_URL}/debug/chat/${requestId}`,
+                    `${API_BASE_URL}/fixed-chat/${requestId}`
+                ];
+
+                let lastError = null;
+                let data = null;
                 
-                if (!response.ok) {
-                    throw new Error(`Failed to load chat: ${response.status} ${response.statusText}`);
+                for (const endpoint of endpoints) {
+                    try {
+                        console.log(`Attempting to fetch chat history from: ${endpoint}`);
+                        const response = await fetch(endpoint);
+                        
+                        if (!response.ok) {
+                            console.warn(`Failed to load chat history from ${endpoint}: ${response.status} ${response.statusText}`);
+                            lastError = new Error(`HTTP error: ${response.status}`);
+                            continue;
+                        }
+                        
+                        data = await response.json();
+                        console.log(`Chat history loaded from ${endpoint}:`, data);
+                        
+                        if (!data) {
+                            console.warn(`Endpoint ${endpoint} returned null or empty data`);
+                            lastError = new Error('Null response');
+                            continue;
+                        }
+                        
+                        // If we got data, break out of the loop
+                        console.log(`Successfully loaded data from ${endpoint}`);
+                        break;
+                    } catch (error) {
+                        console.error(`Error loading chat history from ${endpoint}:`, error);
+                        lastError = error;
+                    }
                 }
                 
-                const data = await response.json();
+                // If all attempts failed or returned null
+                if (!data) {
+                    throw lastError || new Error('Failed to load chat history from all endpoints');
+                }
+                
                 supportRequest = data; // Store the full request data
                 
                 // Update chat header
@@ -296,15 +333,19 @@
                 addSystemMessage(`Issue: ${data.issue}`);
                 
                 // Add all messages
-                data.messages.forEach(msg => {
-                    const msgIsFromAdmin = msg.sender_type === 'admin';
-                    const isMine = isAdmin ? msgIsFromAdmin : !msgIsFromAdmin;
-                    addMessage(msg.message, msgIsFromAdmin, new Date(msg.timestamp), isMine);
-                });
-                
-                // Update last message timestamp
-                if (data.messages.length > 0) {
-                    lastMessageTimestamp = new Date(data.messages[data.messages.length - 1].timestamp);
+                if (data.messages && Array.isArray(data.messages)) {
+                    data.messages.forEach(msg => {
+                        const msgIsFromAdmin = msg.sender_type === 'admin';
+                        const isMine = isAdmin ? msgIsFromAdmin : !msgIsFromAdmin;
+                        addMessage(msg.message, msgIsFromAdmin, new Date(msg.timestamp), isMine);
+                    });
+                    
+                    // Update last message timestamp
+                    if (data.messages.length > 0) {
+                        lastMessageTimestamp = new Date(data.messages[data.messages.length - 1].timestamp);
+                    }
+                } else {
+                    addSystemMessage('No messages yet. Start the conversation!');
                 }
                 
                 // Scroll to bottom
@@ -315,7 +356,7 @@
                 startPolling();
             } catch (error) {
                 console.error('Error loading chat:', error);
-                showError(`Failed to load chat: ${error.message}`);
+                showError(`Error Loading Chat\n${error.message}\n\nYour request has been submitted. Please try again later.`);
                 hideLoading();
             }
         }
@@ -367,18 +408,42 @@
                 // Determine sender type based on user role
                 const senderType = isAdmin ? 'admin' : 'user';
                 
-                const response = await fetch(`${API_BASE_URL}/api/requests/${requestId}/messages`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        sender_id: currentUserId,
-                        sender_type: senderType,
-                        message: text
-                    })
-                });
+                const messageData = {
+                    sender_id: currentUserId,
+                    sender_type: senderType,
+                    message: text
+                };
                 
-                if (!response.ok) {
-                    throw new Error(`Failed to send message: ${response.status} ${response.statusText}`);
+                // Try both endpoints
+                let response;
+                let success = false;
+                
+                // First try the chat_api endpoint
+                try {
+                    response = await fetch(`${API_BASE_URL}/api/chat_api/${requestId}/messages`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(messageData)
+                    });
+                    
+                    if (response.ok) {
+                        success = true;
+                    }
+                } catch (error) {
+                    console.log("Failed to send via chat_api endpoint, trying fallback");
+                }
+                
+                // If first attempt failed, try the support endpoint
+                if (!success) {
+                    response = await fetch(`${API_BASE_URL}/api/support/chat/${requestId}/messages`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(messageData)
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`Failed to send message: ${response.status} ${response.statusText}`);
+                    }
                 }
                 
                 // Add message to UI
@@ -402,17 +467,31 @@
         async function pollNewMessages() {
             try {
                 const since = lastMessageTimestamp ? lastMessageTimestamp.toISOString() : null;
-                const url = since 
-                    ? `${API_BASE_URL}/api/chat/${requestId}/messages?since=${encodeURIComponent(since)}`
-                    : `${API_BASE_URL}/api/chat/${requestId}/messages`;
                 
-                const response = await fetch(url);
+                // First try the chat_api endpoint
+                let url = since 
+                    ? `${API_BASE_URL}/api/chat_api/${requestId}/messages?since=${encodeURIComponent(since)}`
+                    : `${API_BASE_URL}/api/chat_api/${requestId}/messages`;
                 
-                if (!response.ok) {
-                    throw new Error(`Failed to poll messages: ${response.status} ${response.statusText}`);
+                let response = await fetch(url);
+                let newMessages = null;
+                
+                if (response.ok) {
+                    newMessages = await response.json();
+                } else {
+                    // Fallback to support endpoint
+                    url = since 
+                        ? `${API_BASE_URL}/api/support/chat/${requestId}/messages?since=${encodeURIComponent(since)}`
+                        : `${API_BASE_URL}/api/support/chat/${requestId}/messages`;
+                    
+                    response = await fetch(url);
+                    
+                    if (response.ok) {
+                        newMessages = await response.json();
+                    } else {
+                        throw new Error(`Failed to poll messages: ${response.status} ${response.statusText}`);
+                    }
                 }
-                
-                const newMessages = await response.json();
                 
                 if (newMessages && newMessages.length > 0) {
                     // Update lastMessageTimestamp
