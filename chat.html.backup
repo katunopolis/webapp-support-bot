@@ -7,7 +7,6 @@
     <meta name="theme-color" content="#2481cc">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="version" content="1.2.1-fix-20250320">
     <style>
         :root {
             --tg-theme-bg-color: #ffffff;
@@ -51,7 +50,6 @@
             padding: 8px;
             border-bottom: 1px solid var(--tg-theme-hint-color, rgba(0,0,0,0.1));
             margin-bottom: 8px;
-            position: relative;
         }
 
         .chat-header h3 {
@@ -71,7 +69,6 @@
             display: flex;
             flex-direction: column;
             gap: 4px;
-            padding-bottom: 60px;
         }
 
         .message {
@@ -80,140 +77,146 @@
             border-radius: var(--message-radius);
             position: relative;
             word-wrap: break-word;
-            margin-bottom: 8px;
+            animation: fadeIn 0.2s ease;
+            margin: 2px 0;
+            font-size: 15px;
+            line-height: 1.3;
         }
 
         .user-message {
+            align-self: flex-start;
             background-color: var(--tg-theme-secondary-bg-color);
             color: var(--tg-theme-text-color);
-            align-self: flex-start;
             border-bottom-left-radius: 4px;
         }
 
         .admin-message {
-            background-color: var(--tg-theme-button-color);
-            color: var(--tg-theme-button-text-color);
             align-self: flex-start;
+            background-color: var(--tg-theme-secondary-bg-color);
+            color: var(--tg-theme-text-color);
             border-bottom-left-radius: 4px;
         }
-
+        
         .my-message {
             align-self: flex-end;
+            background-color: var(--tg-theme-button-color);
+            color: var(--tg-theme-button-text-color);
             border-bottom-right-radius: 4px;
-            border-bottom-left-radius: var(--message-radius);
-        }
-
-        .my-message.user-message {
-            background-color: #e1f5fe;
-            color: #0277bd;
-        }
-
-        .my-message.admin-message {
-            background-color: #1976d2;
-            color: white;
-        }
-
-        .message-sender {
-            font-size: 12px;
-            font-weight: 500;
-            margin-bottom: 2px;
-            opacity: 0.8;
-        }
-
-        .message-content {
-            line-height: 1.4;
         }
 
         .message-time {
-            font-size: 10px;
-            opacity: 0.6;
-            text-align: right;
+            font-size: 12px;
+            opacity: 0.7;
             margin-top: 2px;
+            text-align: right;
         }
 
-        .chat-input {
+        .input-container {
             position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
-            display: flex;
             padding: 8px;
-            background-color: var(--tg-theme-bg-color);
+            background: var(--tg-theme-bg-color);
             border-top: 1px solid var(--tg-theme-hint-color, rgba(0,0,0,0.1));
+            display: flex;
+            gap: 8px;
+            align-items: flex-end;
         }
-        
+
         .message-input {
             flex: 1;
+            padding: 8px 12px;
             border: 1px solid var(--tg-theme-hint-color, rgba(0,0,0,0.2));
             border-radius: 18px;
-            padding: 8px 12px;
-            font-size: 15px;
-            resize: none;
-            background-color: var(--tg-theme-bg-color);
+            background: var(--tg-theme-bg-color);
             color: var(--tg-theme-text-color);
-            margin-right: 8px;
-            max-height: 100px;
+            font-size: 15px;
+            line-height: 20px;
             outline: none;
+            resize: none;
+            max-height: 100px;
+            min-height: 36px;
         }
-        
+
         .send-button {
-            background-color: var(--tg-theme-button-color);
+            padding: 8px 16px;
+            background: var(--tg-theme-button-color);
             color: var(--tg-theme-button-text-color);
             border: none;
             border-radius: 18px;
-            padding: 8px 16px;
             font-size: 15px;
+            font-weight: 500;
             cursor: pointer;
-            outline: none;
-        }
-        
-        .error-message {
-            position: fixed;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: rgba(255, 0, 0, 0.8);
-            color: white;
-            padding: 8px 12px;
-            border-radius: 4px;
-            z-index: 100;
-            font-size: 14px;
+            transition: opacity 0.2s;
+            min-height: 36px;
         }
 
-        .version-info {
-            font-size: 10px;
+        .send-button:active {
+            opacity: 0.8;
+        }
+
+        .status {
+            text-align: center;
+            padding: 8px;
             color: var(--tg-theme-hint-color);
-            opacity: 0.7;
-            text-align: right;
-            position: absolute;
-            right: 8px;
-            bottom: 5px;
+            font-size: 14px;
+            margin: 8px 0;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .error-message {
+            color: #e74c3c;
+            text-align: center;
+            margin: 8px;
+            padding: 8px;
+            background-color: rgba(231, 76, 60, 0.1);
+            border-radius: 8px;
+            font-size: 14px;
+            display: none;
         }
     </style>
 </head>
 <body>
-    <div class="error-message" id="errorMessage" style="display: none;"></div>
-    <div class="chat-container" id="chatContainer">
-        <div class="chat-header" id="chatHeader">
-            <h3 id="requestTitle">Support Request</h3>
-            <div id="requestStatus">Loading...</div>
-            <div class="version-info">v1.2.1-fix</div>
-        </div>
-        <div id="messagesContainer" class="messages-container"></div>
+    <div class="chat-header" id="chatHeader">
+        <h3 id="requestTitle">Support Request</h3>
+        <div id="requestStatus">Loading...</div>
     </div>
-    
-    <div class="chat-input">
+
+    <div class="chat-container" id="chatContainer">
+        <div class="messages-container" id="messagesContainer"></div>
+    </div>
+
+    <div class="input-container">
         <textarea class="message-input" id="messageInput" placeholder="Type a message..." rows="1"></textarea>
         <button class="send-button" id="sendButton">Send</button>
     </div>
 
+    <div class="error-message" id="errorMessage"></div>
+
     <script>
-        // Initialize variables
+        // Initialize Telegram WebApp
         const tg = window.Telegram.WebApp;
         tg.expand();
         tg.ready();
-        
-        // DOM elements
+
+        // Set theme colors
+        function setThemeColors() {
+            const params = tg.themeParams;
+            document.documentElement.style.setProperty('--tg-theme-bg-color', params.bg_color);
+            document.documentElement.style.setProperty('--tg-theme-text-color', params.text_color);
+            document.documentElement.style.setProperty('--tg-theme-button-color', params.button_color);
+            document.documentElement.style.setProperty('--tg-theme-button-text-color', params.button_text_color);
+            document.documentElement.style.setProperty('--tg-theme-hint-color', params.hint_color);
+            document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', params.secondary_bg_color);
+        }
+        setThemeColors();
+
+        // Elements
         const chatContainer = document.getElementById('chatContainer');
         const messagesContainer = document.getElementById('messagesContainer');
         const messageInput = document.getElementById('messageInput');
@@ -240,15 +243,6 @@
         let isPolling = false;
         let lastMessageTimestamp = null;
         let isInitializing = false;
-        let currentUserId = adminIdFromQuery || (tg.initDataUnsafe?.user?.id || 'unknown');
-        let currentUserType = adminIdFromQuery ? 'admin' : 'user';
-
-        console.log('Chat initialization:', {
-            requestId: requestId,
-            currentUserId: currentUserId,
-            currentUserType: currentUserType,
-            isAdmin: !!adminIdFromQuery
-        });
 
         // Utility functions for timestamp handling
         function ensureISOTimestamp(timestamp) {
@@ -307,29 +301,12 @@
                 // Add messages to UI
                 messagesContainer.innerHTML = '';
                 if (data.messages && data.messages.length > 0) {
-                    console.log(`Loaded ${data.messages.length} messages from history:`, data.messages);
-                    
-                    // Sort messages by timestamp to ensure correct order
-                    data.messages.sort((a, b) => {
-                        const timeA = new Date(ensureISOTimestamp(a.timestamp)).getTime();
-                        const timeB = new Date(ensureISOTimestamp(b.timestamp)).getTime();
-                        return timeA - timeB;
-                    });
-                    
                     data.messages.forEach(msg => {
                         msg.timestamp = ensureISOTimestamp(msg.timestamp);
-                        console.log('Adding message from history:', {
-                            sender_id: msg.sender_id,
-                            sender_type: msg.sender_type,
-                            message: msg.message.substring(0, 30) + (msg.message.length > 30 ? '...' : ''),
-                            timestamp: msg.timestamp,
-                            isMine: msg.sender_id === currentUserId
-                        });
                         addMessage(msg);
                     });
                     lastMessageTimestamp = ensureISOTimestamp(data.messages[data.messages.length - 1].timestamp);
                 } else {
-                    console.log('No messages in history');
                     lastMessageTimestamp = new Date().toISOString();
                 }
                 
@@ -383,40 +360,26 @@
                 try {
                     const timestamp = ensureISOTimestamp(lastMessageTimestamp);
                     console.debug('Polling with timestamp:', timestamp); // Debug log
-
+                    
                     const response = await fetch(
                         `${API_BASE_URL}/api/chat/${requestId}/messages?since=${encodeURIComponent(timestamp)}`,
-                        {
-                            headers: {
+                        { 
+                            headers: { 
                                 'Cache-Control': 'no-cache',
                                 'X-Last-Timestamp': timestamp
                             }
                         }
                     );
-
+                    
                     if (response.ok) {
                         const messages = await response.json();
-                        console.log(`Received ${messages.length} messages in polling:`, messages);
-                        
                         if (messages && messages.length > 0) {
                             messages.forEach(msg => {
                                 const msgTimestamp = ensureISOTimestamp(msg.timestamp);
-                                console.log('Processing message:', {
-                                    id: msg.id,
-                                    sender_id: msg.sender_id,
-                                    sender_type: msg.sender_type,
-                                    message: msg.message,
-                                    timestamp: msgTimestamp,
-                                    isMine: msg.sender_id === currentUserId,
-                                    currentUserId: currentUserId
-                                });
-                                
                                 if (msgTimestamp > lastMessageTimestamp) {
                                     msg.timestamp = msgTimestamp;
                                     addMessage(msg);
                                     lastMessageTimestamp = msgTimestamp;
-                                } else {
-                                    console.log('Skipping older message:', msgTimestamp, '<', lastMessageTimestamp);
                                 }
                             });
                             scrollToBottom();
@@ -480,54 +443,22 @@
 
         // Add a message to the UI
         function addMessage(message) {
-            // Don't process duplicate messages (check by id if available)
-            if (message.id) {
-                const existingMsg = document.querySelector(`[data-message-id="${message.id}"]`);
-                if (existingMsg) {
-                    console.log(`Message ID ${message.id} already exists, skipping`);
-                    return;
-                }
-            }
-            
             const isAdmin = message.sender_type === 'admin';
-            const isMine = message.sender_id.toString() === currentUserId.toString();
+            const isMine = message.sender_id === (adminIdFromQuery || tg.initDataUnsafe?.user?.id);
             
-            console.log('Rendering message:', {
-                isAdmin,
-                isMine,
-                sender_id: message.sender_id,
-                currentUserId,
-                sender_type: message.sender_type,
-                message: message.message.substring(0, 30) + (message.message.length > 30 ? '...' : '')
-            });
-
-            // Create message div
             const messageDiv = document.createElement('div');
-            
-            // Apply appropriate classes:
-            // - admin-message or user-message determines the type of message
-            // - my-message positions the message (right for my messages, left for others)
             messageDiv.className = `message ${isAdmin ? 'admin-message' : 'user-message'} ${isMine ? 'my-message' : ''}`;
             
-            // Add message ID as data attribute if available
-            if (message.id) {
-                messageDiv.setAttribute('data-message-id', message.id);
-            }
-
             // Ensure ISO timestamp for display
             const timestamp = ensureISOTimestamp(message.timestamp);
             try {
-                const time = new Date(timestamp).toLocaleTimeString([], {
-                    hour: '2-digit',
+                const time = new Date(timestamp).toLocaleTimeString([], { 
+                    hour: '2-digit', 
                     minute: '2-digit',
                     hour12: false
                 });
-
-                // Add sender identifier for clarity when user and admin are chatting
-                const senderLabel = isAdmin ? 'Admin' : 'User';
                 
                 messageDiv.innerHTML = `
-                    <div class="message-sender">${isMine ? 'You' : senderLabel}</div>
                     <div class="message-content">${escapeHtml(message.message)}</div>
                     <div class="message-time">${time}</div>
                     <div class="message-timestamp" style="display: none;">${timestamp}</div>
@@ -535,22 +466,19 @@
             } catch (e) {
                 console.error('Error formatting timestamp:', e);
                 // Fallback to current time if there's an error
-                const fallbackTime = new Date().toLocaleTimeString([], {
-                    hour: '2-digit',
+                const fallbackTime = new Date().toLocaleTimeString([], { 
+                    hour: '2-digit', 
                     minute: '2-digit',
                     hour12: false
                 });
-
-                const senderLabel = isAdmin ? 'Admin' : 'User';
                 
                 messageDiv.innerHTML = `
-                    <div class="message-sender">${isMine ? 'You' : senderLabel}</div>
                     <div class="message-content">${escapeHtml(message.message)}</div>
                     <div class="message-time">${fallbackTime}</div>
                     <div class="message-timestamp" style="display: none;">${new Date().toISOString()}</div>
                 `;
             }
-
+            
             messagesContainer.appendChild(messageDiv);
         }
 
@@ -558,43 +486,41 @@
         async function sendMessage() {
             const text = messageInput.value.trim();
             if (!text) return;
-
+            
             messageInput.value = '';
             adjustTextareaHeight();
-
+            
+            const senderId = adminIdFromQuery || tg.initDataUnsafe?.user?.id;
+            const senderType = adminIdFromQuery ? 'admin' : 'user';
             const currentTimestamp = new Date().toISOString();
-
+            
             try {
                 const messageData = {
-                    sender_id: currentUserId,
-                    sender_type: currentUserType,
+                    sender_id: senderId,
+                    sender_type: senderType,
                     message: text,
                     timestamp: currentTimestamp
                 };
-
-                console.log('Sending message:', messageData);
-
+                
                 // Add message to UI immediately (optimistic update)
                 addMessage(messageData);
                 scrollToBottom();
-
+                
                 // Send to server
                 const response = await fetch(`${API_BASE_URL}/api/chat/${requestId}/messages`, {
                     method: 'POST',
-                    headers: {
+                    headers: { 
                         'Content-Type': 'application/json',
                         'X-Client-Timestamp': currentTimestamp
                     },
                     body: JSON.stringify(messageData)
                 });
-
+                
                 if (!response.ok) {
                     throw new Error('Failed to send message');
                 }
-
-                const data = await response.json();
-                console.log('Server response:', data);
                 
+                const data = await response.json();
                 // Update the timestamp from the server response or fall back to the client timestamp
                 lastMessageTimestamp = ensureISOTimestamp(data.timestamp || currentTimestamp);
             } catch (error) {

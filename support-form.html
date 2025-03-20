@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Support Request</title>
+    <!-- Telegram WebApp JavaScript SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Mobile viewport settings -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- Theme color for mobile browsers -->
+    <meta name="theme-color" content="#2481cc">
+    <!-- iOS specific meta tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* CSS Variables for Telegram theme colors */
+        :root {
+            --tg-theme-bg-color: #ffffff;
+            --tg-theme-text-color: #000000;
+            --tg-theme-button-color: #2481cc;
+            --tg-theme-button-text-color: #ffffff;
+            --tg-theme-hint-color: #999999;
+        }
+
+        /* Base styles with Telegram theme support */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--tg-theme-bg-color);
+            color: var(--tg-theme-text-color);
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        /* Container with safe area insets for mobile */
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="form-container">
+            <h2>Submit Support Request</h2>
+            <form id="supportForm">
+                <div class="form-group">
+                    <label for="issue">Describe your issue:</label>
+                    <textarea id="issue" required></textarea>
+                    <div id="issueLength">0/500 characters</div>
+                </div>
+                <button type="submit" id="submitButton">Submit Request</button>
+            </form>
+            <div id="error" class="error"></div>
+            <div id="loading" class="loading-spinner" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Telegram WebApp
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.ready();
+
+        // Set theme based on Telegram settings
+        document.documentElement.style.setProperty('--tg-theme-bg-color', tg.backgroundColor);
+        document.documentElement.style.setProperty('--tg-theme-text-color', tg.textColor);
+        document.documentElement.style.setProperty('--tg-theme-button-color', tg.buttonColor);
+        document.documentElement.style.setProperty('--tg-theme-button-text-color', tg.buttonTextColor);
+        document.documentElement.style.setProperty('--tg-theme-hint-color', tg.backgroundColor);
+
+        // Get form elements
+        const supportForm = document.getElementById('supportForm');
+        const issueTextarea = document.getElementById('issue');
+        const issueLengthDiv = document.getElementById('issueLength');
+        const submitButton = document.getElementById('submitButton');
+        const errorDiv = document.getElementById('error');
+        const loadingDiv = document.getElementById('loading');
+
+        // Update character count
+        issueTextarea.addEventListener('input', () => {
+            const length = issueTextarea.value.length;
+            issueLengthDiv.textContent = `${length}/500 characters`;
+        });
+
+        // Handle form submission
+        supportForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Show loading state
+            submitButton.disabled = true;
+            loadingDiv.style.display = 'block';
+            errorDiv.style.display = 'none';
+            
+            try {
+                const issue = issueTextarea.value.trim();
+                const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : null;
+                
+                if (!userId) {
+                    throw new Error("Could not identify user");
+                }
+                
+                // Submit request
+                const response = await fetch('/support-request', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        issue: issue
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to submit request: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                // Redirect to chat view
+                window.location.href = `/chat.html?request_id=${data.request_id}`;
+                
+            } catch (error) {
+                console.error('Error:', error);
+                errorDiv.textContent = error.message;
+                errorDiv.style.display = 'block';
+                submitButton.disabled = false;
+            } finally {
+                loadingDiv.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html> 
