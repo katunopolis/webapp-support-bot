@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Support Chat</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#2481cc">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -15,6 +16,7 @@
             --tg-theme-button-color: #2481cc;
             --tg-theme-button-text-color: #ffffff;
             --tg-theme-hint-color: #999999;
+            --tg-theme-link-color: #2481cc;
             --tg-theme-secondary-bg-color: #f1f1f1;
             --message-radius: 12px;
             --message-padding: 8px 12px;
@@ -22,172 +24,161 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            margin: 0;
-            padding: 0;
             background-color: var(--tg-theme-bg-color);
             color: var(--tg-theme-text-color);
-            -webkit-tap-highlight-color: transparent;
-            touch-action: manipulation;
+            margin: 0;
+            padding: 0;
             height: 100vh;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
         }
 
         .chat-container {
             flex: 1;
             display: flex;
             flex-direction: column;
-            padding: 8px;
-            padding-bottom: 60px;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
+            padding: 10px;
+            overflow: hidden;
         }
 
-        .chat-header {
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            background-color: var(--tg-theme-bg-color);
-            padding: 8px;
-            border-bottom: 1px solid var(--tg-theme-hint-color, rgba(0,0,0,0.1));
-            margin-bottom: 8px;
-            position: relative;
-        }
-
-        .chat-header h3 {
-            margin: 0;
-            font-size: 16px;
-            font-weight: 500;
-        }
-
-        #requestStatus {
-            font-size: 14px;
-            color: var(--tg-theme-hint-color);
-            margin-top: 4px;
-        }
-
-        .messages-container {
+        .chat-messages {
             flex: 1;
+            overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 4px;
-            padding-bottom: 60px;
+            gap: 8px;
+            padding-bottom: 10px;
         }
 
         .message {
             max-width: 80%;
-            padding: var(--message-padding);
-            border-radius: var(--message-radius);
-            position: relative;
+            padding: 8px 12px;
+            border-radius: 12px;
             word-wrap: break-word;
-            margin-bottom: 8px;
+            position: relative;
+            margin-bottom: 4px;
         }
 
-        .user-message {
-            background-color: var(--tg-theme-secondary-bg-color);
-            color: var(--tg-theme-text-color);
-            align-self: flex-start;
-            border-bottom-left-radius: 4px;
-        }
-
-        .admin-message {
+        .message.user {
+            align-self: flex-end;
             background-color: var(--tg-theme-button-color);
             color: var(--tg-theme-button-text-color);
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.admin,
+        .message.assistant {
             align-self: flex-start;
+            background-color: var(--tg-theme-secondary-bg-color);
+            color: var(--tg-theme-text-color);
             border-bottom-left-radius: 4px;
         }
 
-        .my-message {
-            align-self: flex-end;
-            border-bottom-right-radius: 4px;
-            border-bottom-left-radius: var(--message-radius);
+        .message.system {
+            align-self: center;
+            background-color: rgba(0, 0, 0, 0.05);
+            color: var(--tg-theme-hint-color);
+            font-size: 0.8em;
+            padding: 4px 8px;
+            border-radius: 8px;
         }
 
-        .my-message.user-message {
-            background-color: #e1f5fe;
-            color: #0277bd;
-        }
-
-        .my-message.admin-message {
-            background-color: #1976d2;
-            color: white;
-        }
-
-        .message-sender {
-            font-size: 12px;
-            font-weight: 500;
-            margin-bottom: 2px;
-            opacity: 0.8;
-        }
-
-        .message-content {
-            line-height: 1.4;
-        }
-
-        .message-time {
-            font-size: 10px;
-            opacity: 0.6;
-            text-align: right;
+        .timestamp {
+            font-size: 0.7em;
+            opacity: 0.7;
             margin-top: 2px;
+            text-align: right;
         }
 
-        .chat-input {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            display: flex;
-            padding: 8px;
-            background-color: var(--tg-theme-bg-color);
-            border-top: 1px solid var(--tg-theme-hint-color, rgba(0,0,0,0.1));
+        .message.user .timestamp {
+            color: rgba(255, 255, 255, 0.7);
         }
-        
+
+        .input-container {
+            display: flex;
+            padding: 10px;
+            gap: 8px;
+            background-color: var(--tg-theme-bg-color);
+            border-top: 1px solid var(--tg-theme-secondary-bg-color);
+        }
+
         .message-input {
             flex: 1;
-            border: 1px solid var(--tg-theme-hint-color, rgba(0,0,0,0.2));
+            padding: 10px;
+            border: 1px solid var(--tg-theme-secondary-bg-color);
             border-radius: 18px;
-            padding: 8px 12px;
-            font-size: 15px;
+            outline: none;
             resize: none;
+            font-family: inherit;
             background-color: var(--tg-theme-bg-color);
             color: var(--tg-theme-text-color);
-            margin-right: 8px;
-            max-height: 100px;
-            outline: none;
         }
-        
+
+        .message-input::placeholder {
+            color: var(--tg-theme-hint-color);
+        }
+
         .send-button {
             background-color: var(--tg-theme-button-color);
             color: var(--tg-theme-button-text-color);
             border: none;
-            border-radius: 18px;
-            padding: 8px 16px;
-            font-size: 15px;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             cursor: pointer;
-            outline: none;
-        }
-        
-        .error-message {
-            position: fixed;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: rgba(255, 0, 0, 0.8);
-            color: white;
-            padding: 8px 12px;
-            border-radius: 4px;
-            z-index: 100;
-            font-size: 14px;
+            align-self: flex-end;
         }
 
-        .version-info {
-            font-size: 10px;
-            color: var(--tg-theme-hint-color);
-            opacity: 0.7;
-            text-align: right;
-            position: absolute;
-            right: 8px;
-            bottom: 5px;
+        .send-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .send-icon {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        .typing-indicator {
+            padding: 8px;
+            align-self: flex-start;
+            display: none;
+        }
+
+        .typing-indicator.visible {
+            display: flex;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--tg-theme-hint-color);
+            border-radius: 50%;
+            margin: 0 2px;
+            animation: typing 1.5s infinite ease-in-out;
+        }
+
+        .dot:nth-child(1) { animation-delay: 0s; }
+        .dot:nth-child(2) { animation-delay: 0.3s; }
+        .dot:nth-child(3) { animation-delay: 0.6s; }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-5px); }
+        }
+
+        .chat-closed {
+            text-align: center;
+            padding: 20px;
+            background-color: rgba(255, 0, 0, 0.05);
+            color: #ff5252;
+            margin: 10px;
+            border-radius: 8px;
         }
     </style>
 </head>
@@ -199,12 +190,16 @@
             <div id="requestStatus">Loading...</div>
             <div class="version-info">v1.2.1-fix</div>
         </div>
-        <div id="messagesContainer" class="messages-container"></div>
+        <div id="messagesContainer" class="chat-messages"></div>
     </div>
     
-    <div class="chat-input">
+    <div class="input-container">
         <textarea class="message-input" id="messageInput" placeholder="Type a message..." rows="1"></textarea>
-        <button class="send-button" id="sendButton">Send</button>
+        <button class="send-button" id="sendButton">
+            <svg class="send-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+            </svg>
+        </button>
     </div>
 
     <script>
@@ -273,21 +268,27 @@
             isAdmin: !!adminIdFromQuery
         });
 
+        // Apply Telegram theme colors to CSS variables
+        document.documentElement.style.setProperty('--tg-theme-bg-color', tg.backgroundColor || '#ffffff');
+        document.documentElement.style.setProperty('--tg-theme-text-color', tg.textColor || '#000000');
+        document.documentElement.style.setProperty('--tg-theme-button-color', tg.buttonColor || '#2481cc');
+        document.documentElement.style.setProperty('--tg-theme-button-text-color', tg.buttonTextColor || '#ffffff');
+        document.documentElement.style.setProperty('--tg-theme-hint-color', tg.hintColor || '#999999');
+        document.documentElement.style.setProperty('--tg-theme-link-color', tg.linkColor || '#2481cc');
+        document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', tg.secondaryBackgroundColor || '#f1f1f1');
+
         // Utility functions for timestamp handling
-        function ensureISOTimestamp(timestamp) {
-            if (!timestamp || timestamp === 'undefined') {
-                console.warn('Invalid timestamp provided:', timestamp);
-                return new Date().toISOString();
-            }
+        function getCurrentTimestamp() {
+            return new Date().toISOString();
+        }
+
+        function formatTimestamp(timestamp) {
             try {
                 const date = new Date(timestamp);
-                if (isNaN(date.getTime())) {
-                    throw new Error('Invalid date');
-                }
-                return date.toISOString();
+                return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             } catch (e) {
-                console.error('Invalid timestamp:', timestamp);
-                return new Date().toISOString();
+                console.error("Error formatting timestamp:", e);
+                return ""; 
             }
         }
 
@@ -334,13 +335,13 @@
                     
                     // Sort messages by timestamp to ensure correct order
                     data.messages.sort((a, b) => {
-                        const timeA = new Date(ensureISOTimestamp(a.timestamp)).getTime();
-                        const timeB = new Date(ensureISOTimestamp(b.timestamp)).getTime();
+                        const timeA = new Date(formatTimestamp(a.timestamp)).getTime();
+                        const timeB = new Date(formatTimestamp(b.timestamp)).getTime();
                         return timeA - timeB;
                     });
                     
                     data.messages.forEach(msg => {
-                        msg.timestamp = ensureISOTimestamp(msg.timestamp);
+                        msg.timestamp = formatTimestamp(msg.timestamp);
                         console.log('Adding message from history:', {
                             sender_id: msg.sender_id,
                             sender_type: msg.sender_type,
@@ -350,10 +351,10 @@
                         });
                         addMessage(msg);
                     });
-                    lastMessageTimestamp = ensureISOTimestamp(data.messages[data.messages.length - 1].timestamp);
+                    lastMessageTimestamp = formatTimestamp(data.messages[data.messages.length - 1].timestamp);
                 } else {
                     console.log('No messages in history');
-                    lastMessageTimestamp = new Date().toISOString();
+                    lastMessageTimestamp = getCurrentTimestamp();
                 }
                 
                 // Start polling only if not already polling
@@ -368,7 +369,7 @@
                 showError('Failed to load chat history. Please try refreshing.');
                 // Ensure we have a valid timestamp even on error
                 if (!lastMessageTimestamp) {
-                    lastMessageTimestamp = new Date().toISOString();
+                    lastMessageTimestamp = getCurrentTimestamp();
                 }
             } finally {
                 isInitializing = false;
@@ -387,9 +388,9 @@
             // Ensure we have a valid timestamp before starting polling
             if (!lastMessageTimestamp) {
                 console.warn('No lastMessageTimestamp available, initializing with current time');
-                lastMessageTimestamp = new Date().toISOString();
+                lastMessageTimestamp = getCurrentTimestamp();
             } else {
-                lastMessageTimestamp = ensureISOTimestamp(lastMessageTimestamp);
+                lastMessageTimestamp = formatTimestamp(lastMessageTimestamp);
             }
             
             isPolling = true;
@@ -404,7 +405,7 @@
                 }
 
                 try {
-                    const timestamp = ensureISOTimestamp(lastMessageTimestamp);
+                    const timestamp = formatTimestamp(lastMessageTimestamp);
                     console.debug('Polling with timestamp:', timestamp); // Debug log
 
                     const response = await fetch(
@@ -423,7 +424,7 @@
                         
                         if (messages && messages.length > 0) {
                             messages.forEach(msg => {
-                                const msgTimestamp = ensureISOTimestamp(msg.timestamp);
+                                const msgTimestamp = formatTimestamp(msg.timestamp);
                                 console.log('Processing message:', {
                                     id: msg.id,
                                     sender_id: msg.sender_id,
@@ -538,7 +539,7 @@
             }
 
             // Ensure ISO timestamp for display
-            const timestamp = ensureISOTimestamp(message.timestamp);
+            const timestamp = formatTimestamp(message.timestamp);
             try {
                 const time = new Date(timestamp).toLocaleTimeString([], {
                     hour: '2-digit',
@@ -570,7 +571,7 @@
                     <div class="message-sender">${isMine ? 'You' : senderLabel}</div>
                     <div class="message-content">${escapeHtml(message.message)}</div>
                     <div class="message-time">${fallbackTime}</div>
-                    <div class="message-timestamp" style="display: none;">${new Date().toISOString()}</div>
+                    <div class="message-timestamp" style="display: none;">${getCurrentTimestamp()}</div>
                 `;
             }
 
@@ -585,7 +586,7 @@
             messageInput.value = '';
             adjustTextareaHeight();
 
-            const currentTimestamp = new Date().toISOString();
+            const currentTimestamp = getCurrentTimestamp();
 
             try {
                 const messageData = {
@@ -619,7 +620,7 @@
                 console.log('Server response:', data);
                 
                 // Update the timestamp from the server response or fall back to the client timestamp
-                lastMessageTimestamp = ensureISOTimestamp(data.timestamp || currentTimestamp);
+                lastMessageTimestamp = formatTimestamp(data.timestamp || currentTimestamp);
             } catch (error) {
                 console.error('Error sending message:', error);
                 showError('Failed to send message. Please try again.');
