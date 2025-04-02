@@ -20,13 +20,15 @@
             --tg-theme-button-color: #2481cc;
             --tg-theme-button-text-color: #ffffff;
             --tg-theme-hint-color: #999999;
+            --tg-theme-link-color: #2481cc;
+            --tg-theme-secondary-bg-color: #f0f0f0;
         }
 
         /* Base styles with Telegram theme support */
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 0;
             background-color: var(--tg-theme-bg-color);
             color: var(--tg-theme-text-color);
             -webkit-tap-highlight-color: transparent;
@@ -37,8 +39,94 @@
         .container {
             max-width: 600px;
             margin: 0 auto;
-            padding: 20px;
-            padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+            padding: 16px;
+            padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+        }
+
+        /* Form styling */
+        .form-container {
+            background-color: var(--tg-theme-bg-color);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        h2 {
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 16px;
+            color: var(--tg-theme-text-color);
+        }
+        
+        .form-group {
+            margin-bottom: 16px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--tg-theme-text-color);
+        }
+        
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            background-color: var(--tg-theme-secondary-bg-color);
+            color: var(--tg-theme-text-color);
+            font-size: 16px;
+            min-height: 120px;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+        
+        #issueLength {
+            font-size: 14px;
+            margin-top: 4px;
+            text-align: right;
+            color: var(--tg-theme-hint-color);
+        }
+        
+        button {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background-color: var(--tg-theme-button-color);
+            color: var(--tg-theme-button-text-color);
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        
+        button:disabled {
+            opacity: 0.7;
+        }
+        
+        .error {
+            color: #ff3b30;
+            margin-top: 16px;
+            font-size: 14px;
+            display: none;
+        }
+        
+        .loading-spinner {
+            margin: 16px auto;
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top-color: var(--tg-theme-button-color);
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
         }
     </style>
 </head>
@@ -66,11 +154,13 @@
         tg.ready();
 
         // Set theme based on Telegram settings
-        document.documentElement.style.setProperty('--tg-theme-bg-color', tg.backgroundColor);
-        document.documentElement.style.setProperty('--tg-theme-text-color', tg.textColor);
-        document.documentElement.style.setProperty('--tg-theme-button-color', tg.buttonColor);
-        document.documentElement.style.setProperty('--tg-theme-button-text-color', tg.buttonTextColor);
-        document.documentElement.style.setProperty('--tg-theme-hint-color', tg.backgroundColor);
+        document.documentElement.style.setProperty('--tg-theme-bg-color', tg.backgroundColor || '#ffffff');
+        document.documentElement.style.setProperty('--tg-theme-text-color', tg.textColor || '#000000');
+        document.documentElement.style.setProperty('--tg-theme-button-color', tg.buttonColor || '#2481cc');
+        document.documentElement.style.setProperty('--tg-theme-button-text-color', tg.buttonTextColor || '#ffffff');
+        document.documentElement.style.setProperty('--tg-theme-hint-color', tg.hintColor || '#999999');
+        document.documentElement.style.setProperty('--tg-theme-link-color', tg.linkColor || '#2481cc');
+        document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', tg.secondaryBackgroundColor || '#f0f0f0');
 
         // Get form elements
         const supportForm = document.getElementById('supportForm');
@@ -104,7 +194,7 @@
                 }
                 
                 // Submit request
-                const response = await fetch('/support-request', {
+                const response = await fetch('/api/support/request', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'

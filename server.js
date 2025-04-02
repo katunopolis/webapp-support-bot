@@ -246,6 +246,122 @@ app.post('/api/chat/:requestId/messages', async (req, res) => {
     }
 });
 
+// Support request submission endpoint
+app.post('/support-request', async (req, res) => {
+    console.log('Received support request submission');
+    
+    try {
+        const apiHost = 'supportbot';
+        const apiPort = 8000;
+        const requestBody = req.body;
+        
+        console.log('Request body:', requestBody);
+
+        const options = {
+            hostname: apiHost,
+            port: apiPort,
+            path: '/api/support/request', // Changed to use the working API endpoint
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            timeout: 10000 // 10 second timeout
+        };
+
+        console.log('Proxying support request to supportbot service API endpoint');
+        
+        const apiRes = await new Promise((resolve, reject) => {
+            const proxyReq = http.request(options, resolve);
+            proxyReq.on('error', reject);
+            proxyReq.on('timeout', () => {
+                proxyReq.destroy();
+                reject(new Error('Request timed out'));
+            });
+            proxyReq.write(JSON.stringify(requestBody));
+            proxyReq.end();
+        });
+
+        let data = '';
+        await new Promise((resolve, reject) => {
+            apiRes.on('data', chunk => data += chunk);
+            apiRes.on('end', () => resolve());
+            apiRes.on('error', reject);
+        });
+
+        if (apiRes.statusCode === 200) {
+            console.log('Support request submitted successfully');
+            res.json(JSON.parse(data));
+        } else {
+            console.error(`Support request failed with status ${apiRes.statusCode}`);
+            throw new Error(`API returned status ${apiRes.statusCode}: ${data}`);
+        }
+    } catch (error) {
+        console.error('Error submitting support request:', error);
+        res.status(500).json({
+            error: 'Failed to submit support request',
+            details: error.message
+        });
+    }
+});
+
+// API support request endpoint (for the updated form)
+app.post('/api/support/request', async (req, res) => {
+    console.log('Received API support request submission');
+    
+    try {
+        const apiHost = 'supportbot';
+        const apiPort = 8000;
+        const requestBody = req.body;
+        
+        console.log('API request body:', requestBody);
+
+        const options = {
+            hostname: apiHost,
+            port: apiPort,
+            path: '/api/support/request', // Use the API path that works in the backend
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            timeout: 10000 // 10 second timeout
+        };
+
+        console.log('Sending support request to supportbot API endpoint');
+        
+        const apiRes = await new Promise((resolve, reject) => {
+            const proxyReq = http.request(options, resolve);
+            proxyReq.on('error', reject);
+            proxyReq.on('timeout', () => {
+                proxyReq.destroy();
+                reject(new Error('Request timed out'));
+            });
+            proxyReq.write(JSON.stringify(requestBody));
+            proxyReq.end();
+        });
+
+        let data = '';
+        await new Promise((resolve, reject) => {
+            apiRes.on('data', chunk => data += chunk);
+            apiRes.on('end', () => resolve());
+            apiRes.on('error', reject);
+        });
+
+        if (apiRes.statusCode === 200) {
+            console.log('API support request submitted successfully');
+            res.json(JSON.parse(data));
+        } else {
+            console.error(`API support request failed with status ${apiRes.statusCode}`);
+            throw new Error(`API returned status ${apiRes.statusCode}: ${data}`);
+        }
+    } catch (error) {
+        console.error('Error submitting API support request:', error);
+        res.status(500).json({
+            error: 'Failed to submit support request',
+            details: error.message
+        });
+    }
+});
+
 // Start server
 app.listen(port, () => {
     console.log(`Web app server running on port ${port}`);
